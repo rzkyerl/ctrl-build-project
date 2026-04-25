@@ -215,7 +215,7 @@ function ParticleCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasEl
         position: 'absolute', inset: 0,
         width: '100%', height: '100%',
         zIndex: 2, pointerEvents: 'auto',
-        touchAction: 'none',
+        touchAction: 'pan-y',
       }}
       aria-hidden="true"
     />
@@ -250,7 +250,7 @@ export function HeroSection() {
 
       {/* Tagline */}
       <div style={{
-        position: 'absolute', bottom: '11vh', left: '50%',
+        position: 'absolute', bottom: 'max(12vh, 110px)', left: '50%',
         transform: 'translateX(-50%)', zIndex: 10,
         textAlign: 'center', pointerEvents: 'none', whiteSpace: 'nowrap',
       }}>
