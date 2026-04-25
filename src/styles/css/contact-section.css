@@ -1,0 +1,109 @@
+/* ═══════════════════════════════════════════════════
+   CONTACT SECTION — Full-width dark CTA block
+═══════════════════════════════════════════════════ */
+.ct-section {
+  background: #000;
+  padding: 0;
+}
+
+.ct-block {
+  padding: 9rem 2.5rem;
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 1s var(--ease-out), transform 1s var(--ease-out);
+}
+
+.ct-block.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ct-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.ct-label {
+  color: rgba(255,255,255,0.35) !important;
+}
+
+.ct-title {
+  font-size: clamp(3.5rem, 9vw, 8rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  color: #fff;
+  margin: 0;
+}
+
+.ct-desc {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.75;
+  margin: 0;
+  max-width: 440px;
+}
+
+.ct-desc strong {
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+}
+
+/* Actions */
+.ct-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.ct-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  cursor: pointer;
+}
+
+.ct-btn--primary {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+.ct-btn--primary:hover {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255,255,255,0.5);
+}
+
+.ct-btn--outline {
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.ct-btn--outline:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border-color: rgba(255,255,255,0.4);
+}
+
+@media (max-width: 600px) {
+  .ct-block { padding: 6rem 1.5rem; }
+  .ct-actions { flex-direction: column; align-items: stretch; }
+  .ct-btn { justify-content: center; }
+}

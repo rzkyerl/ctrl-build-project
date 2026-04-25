@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════
+   WORKFLOW SECTION — Vertical Timeline
+═══════════════════════════════════════════════════ */
+.wf-section {
+  padding: 8rem 2.5rem;
+  background: var(--cream);
+  border-bottom: 1px solid var(--line-dark);
+}
+
+.wf-container {
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+/* Header */
+.wf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 3rem;
+  margin-bottom: 5rem;
+  flex-wrap: wrap;
+}
+
+/* Steps list */
+.wf-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+/* Step */
+.wf-step {
+  padding: 0 2.5rem 0 0;
+  position: relative;
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+}
+
+.wf-step.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.wf-step:nth-child(2) { transition-delay: 0.1s; }
+.wf-step:nth-child(3) { transition-delay: 0.2s; }
+.wf-step:nth-child(4) { transition-delay: 0.3s; }
+
+/* Number + connecting line */
+.wf-step-num {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.wf-step-num span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  background: var(--cream);
+  z-index: 1;
+  padding-right: 1rem;
+  white-space: nowrap;
+}
+
+.wf-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line-dark);
+  position: absolute;
+  left: 2rem;
+  right: -2.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Body */
+.wf-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.wf-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.wf-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.75;
+  margin: 0;
+}
+
+/* Header reveal */
+.wf-header.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+}
+.wf-header.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .wf-section { padding: 5rem 1.5rem; }
+  .wf-list { grid-template-columns: 1fr 1fr; gap: 3rem 2rem; }
+  .wf-line { display: none; }
+  .wf-header { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+}
+
+@media (max-width: 560px) {
+  .wf-list { grid-template-columns: 1fr; gap: 3rem; }
+}

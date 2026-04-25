@@ -1,0 +1,119 @@
+/* ═══════════════════════════════════════════════════
+   FOOTER — Dark monochrome
+═══════════════════════════════════════════════════ */
+.ft-footer {
+  background: #050505;
+  color: rgba(255,255,255,0.5);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.ft-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 5rem 2.5rem 2.5rem;
+}
+
+.ft-top {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 3rem;
+  margin-bottom: 4rem;
+}
+
+/* Brand */
+.ft-logo {
+  width: 100px;
+  height: auto;
+  opacity: 0.85;
+  margin-bottom: 1.2rem;
+  display: block;
+}
+
+.ft-tagline {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.35);
+  margin: 0;
+}
+
+/* Nav */
+.ft-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ft-nav-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 0.6rem;
+  display: block;
+}
+
+.ft-link {
+  text-decoration: none;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.45);
+  transition: color 0.2s ease;
+  width: fit-content;
+}
+
+.ft-link:hover {
+  color: rgba(255,255,255,0.85);
+}
+
+/* Socials */
+.ft-socials {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ft-social {
+  text-decoration: none;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.45);
+  transition: color 0.2s ease;
+  width: fit-content;
+}
+
+.ft-social:hover {
+  color: rgba(255,255,255,0.85);
+}
+
+/* Divider */
+.ft-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin-bottom: 2rem;
+}
+
+/* Bottom */
+.ft-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.ft-copy {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.25);
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ft-top { grid-template-columns: 1fr 1fr; }
+  .ft-brand { grid-column: 1 / -1; }
+  .ft-container { padding: 4rem 1.5rem 2rem; }
+}
+
+@media (max-width: 480px) {
+  .ft-top { grid-template-columns: 1fr; }
+  .ft-bottom { flex-direction: column; align-items: flex-start; }
+}
