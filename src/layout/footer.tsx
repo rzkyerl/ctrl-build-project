@@ -1,6 +1,6 @@
 import '../styles/css/footer.css'
 
-const logoWhite = new URL('../assets/images/CTRLBuild-White.png', import.meta.url).href
+const logoWhite = new URL('../assets/images/CTRLBuild-White-Footer.png', import.meta.url).href
 
 const links = [
   { label: 'Layanan',    href: '#services' },
@@ -10,7 +10,7 @@ const links = [
 ]
 
 const socials = [
-  { label: 'Instagram', href: 'https://instagram.com/ctrlbuild' },
+  { label: 'Instagram', href: 'https://instagram.com/ctrlbuild_' },
   { label: 'GitHub',    href: 'https://github.com/ctrlbuild' },
   { label: 'LinkedIn',  href: 'https://linkedin.com/in/ctrlbuild' },
 ]
