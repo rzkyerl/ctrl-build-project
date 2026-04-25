@@ -11,8 +11,7 @@ const links = [
 
 const socials = [
   { label: 'Instagram', href: 'https://instagram.com/ctrlbuild_' },
-  { label: 'GitHub',    href: 'https://github.com/ctrlbuild' },
-  { label: 'LinkedIn',  href: 'https://linkedin.com/in/ctrlbuild' },
+  { label: 'Email', href: 'mailto:ctrlbuild2023@gmail.com' },
 ]
 
 export const Footer = () => {
