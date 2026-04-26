@@ -5,7 +5,7 @@ const services = [
   {
     id: 1,
     title: 'Web Development',
-    description: 'Website profesional: company profile, e-commerce, dan web application custom yang responsif, cepat, dan modern.',
+    description: 'Situs web profesional: profil perusahaan, e-commerce, dan aplikasi web khusus yang responsif, cepat, dan modern.',
     tag: 'Development',
   },
   {
@@ -49,7 +49,6 @@ export const ServicesSection = () => {
             Solusi digital lengkap untuk kebutuhan website, aplikasi mobile, dan desain produk — dikerjakan secara profesional.
           </p>
         </div>
-
         {/* Service rows */}
         <div className="svc-list">
           {services.map((svc, i) => (
@@ -62,11 +61,6 @@ export const ServicesSection = () => {
                 </div>
                 <p className="svc-desc">{svc.description}</p>
               </div>
-              <a href="#contact" className="svc-cta" aria-label={`Konsultasi ${svc.title}`}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </a>
             </div>
           ))}
         </div>

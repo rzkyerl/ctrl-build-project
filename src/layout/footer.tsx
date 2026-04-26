@@ -12,6 +12,7 @@ const links = [
 const socials = [
   { label: 'Instagram', href: 'https://instagram.com/ctrlbuild_' },
   { label: 'Email', href: 'mailto:ctrlbuild2023@gmail.com' },
+  { label: 'WhatsApp', href: 'https://wa.me/6285314012136' },
 ]
 
 export const Footer = () => {

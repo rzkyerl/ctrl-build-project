@@ -10,6 +10,28 @@ const frameworks = [
   { name: 'CSS3', slug: 'css' },
   { name: 'JavaScript', slug: 'javascript' },
   { name: 'Tailwind CSS', slug: 'tailwindcss' },
+  { name: 'Figma', slug: 'figma' },
+  { name: 'Node.js', slug: 'nodedotjs' },
+  { name: 'Python', slug: 'python' },
+  { name: 'PostgreSQL', slug: 'postgresql' },
+  { name: 'Sanity', slug: 'sanity' },
+  { name: 'Vercel', slug: 'vercel' },
+  { name: 'GitHub', slug: 'github' },
+  { name: 'Git', slug: 'git' },
+  { name: 'Postman', slug: 'postman' },
+  { name: 'Nestjs', slug: 'nestjs' },
+  { name: 'MySQL', slug: 'mysql' },
+  { name: 'PHP', slug: 'php' },
+  { name: 'TurboRepo', slug: 'turborepo' },
+  { name: 'Vite', slug: 'vite' },
+  { name: 'Bootstrap', slug: 'bootstrap' },
+  
+
+  
+  
+  
+  
+
 ]
 
 export const FrameworkSection = () => {

@@ -1,16 +1,16 @@
 import './App.css'
 import { useEffect } from 'react'
 import Lenis from '@studio-freight/lenis'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { Navbar } from './layout/navbar'
 import { Footer } from './layout/footer'
-import { HeroSection } from './sections/hero-sections'
-import { ServicesSection } from './sections/services-section'
-import { FrameworkSection } from './sections/section-framework'
-import { PortfolioSection } from './sections/portfolio-section'
-import { WorkflowSection } from './sections/workflow-section'
-import { ContactSection } from './sections/contact-section'
+import { HomePage } from './pages/Home'
+import { PortofolioDetail } from './sections/portofolio-detail'
+import { PortofolioMoreDetail } from './sections/portofolio-more-detail'
 
 function App() {
+  const location = useLocation()
+
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.3,
@@ -34,15 +34,19 @@ function App() {
     }
   }, [])
 
+  // Reset scroll on location change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
   return (
     <div className="app-shell">
       <Navbar />
-      <HeroSection />
-      <ServicesSection />
-      <FrameworkSection />
-      <PortfolioSection />
-      <WorkflowSection />
-      <ContactSection />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/projects" element={<PortofolioDetail />} />
+        <Route path="/projects/:id" element={<PortofolioMoreDetail />} />
+      </Routes>
       <Footer />
     </div>
   )

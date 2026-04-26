@@ -119,6 +119,37 @@
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
 }
 
+/* ── Button ──────────────────────────────────────── */
+.pf-btn-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 50px;
+  position: relative;
+  z-index: 10;
+}
+
+.pf-view-all-btn {
+  display: inline-block;
+  padding: 16px 40px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #000;
+  background-color: #fff;
+  border-radius: 50px;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.1);
+}
+
+.pf-view-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+  background-color: #f0f0f0;
+}
+
+
 /* ── Responsive ──────────────────────────────────── */
 @media (max-width: 1024px) {
   .pf-marquee-img {
@@ -155,5 +186,14 @@
   .pf-section::before,
   .pf-section::after {
     width: 30px;
+  }
+
+  .pf-btn-container {
+    margin-top: 30px;
+  }
+
+  .pf-view-all-btn {
+    padding: 12px 30px;
+    font-size: 0.9rem;
   }
 }
