@@ -5,6 +5,7 @@ import { Navbar } from './layout/navbar'
 import { Footer } from './layout/footer'
 import { HeroSection } from './sections/hero-sections'
 import { ServicesSection } from './sections/services-section'
+import { FrameworkSection } from './sections/section-framework'
 import { PortfolioSection } from './sections/portfolio-section'
 import { WorkflowSection } from './sections/workflow-section'
 import { ContactSection } from './sections/contact-section'
@@ -38,6 +39,7 @@ function App() {
       <Navbar />
       <HeroSection />
       <ServicesSection />
+      <FrameworkSection />
       <PortfolioSection />
       <WorkflowSection />
       <ContactSection />
