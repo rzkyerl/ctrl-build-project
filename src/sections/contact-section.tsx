@@ -40,7 +40,7 @@ export const ContactSection = () => {
               Chat via WhatsApp
             </a>
             <a
-              href="mailto:hallo@ctrlbuild.dev"
+              href="mailto:ctrlbuild2023@gmail.com"
               className="ct-btn ct-btn--outline"
               id="email-cta"
             >
