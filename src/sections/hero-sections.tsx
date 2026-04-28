@@ -245,7 +245,7 @@ export function HeroSection() {
       <ParticleCanvas canvasRef={canvasRef} />
 
       <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 }}>
-        Build Your Vision — CTRLBuild
+        CTRLBuild — Jasa Pembuatan Website & Aplikasi Mobile Professional
       </h1>
 
       {/* Tagline */}
