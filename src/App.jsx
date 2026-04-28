@@ -7,7 +7,8 @@ import { Footer } from './layout/footer'
 import { HomePage } from './pages/Home'
 import { PortofolioDetail } from './sections/portofolio-detail'
 import { PortofolioMoreDetail } from './sections/portofolio-more-detail'
-
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/react"
 function App() {
   const location = useLocation()
 
@@ -48,6 +49,8 @@ function App() {
         <Route path="/projects/:id" element={<PortofolioMoreDetail />} />
       </Routes>
       <Footer />
+      <Analytics />
+      <SpeedInsights />
     </div>
   )
 }
