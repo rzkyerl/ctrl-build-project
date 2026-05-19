@@ -1,0 +1,207 @@
+/* ═══════════════════════════════════════════════════
+   SERVICES SECTION — Awwwards Kinetic Table
+═══════════════════════════════════════════════════ */
+.svc-section {
+  padding: 9rem 3rem;
+  background: var(--white);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.svc-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.svc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 3rem;
+  margin-bottom: 5rem;
+  flex-wrap: wrap;
+  padding-bottom: 4rem;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.svc-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* Service list */
+.svc-list {
+  display: flex;
+  flex-direction: column;
+  perspective: 1200px;
+}
+
+/* Row — THE star of the show */
+.svc-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 56px;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 3rem 1.5rem;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition:
+    background 0.5s var(--ease-expo),
+    color 0.5s var(--ease-expo),
+    padding-left 0.4s var(--ease-expo);
+}
+
+/* Full-width fill on hover — pseudo element slides in */
+.svc-row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--black);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.55s var(--ease-expo);
+  z-index: 0;
+}
+
+.svc-row:hover::before { transform: scaleX(1); }
+
+.svc-row:hover {
+  padding-left: 2.5rem;
+  color: var(--white);
+}
+
+.svc-row:last-child { border-bottom: 1px solid rgba(0,0,0,0.08); }
+
+/* All children above the pseudo */
+.svc-num, .svc-body, .svc-arrow { position: relative; z-index: 1; }
+
+/* Number */
+.svc-num {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: rgba(0,0,0,0.12);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.5s var(--ease-expo);
+}
+
+.svc-row:hover .svc-num { color: rgba(255,255,255,0.25); }
+
+/* Body */
+.svc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.svc-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.svc-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.8vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--black);
+  margin: 0;
+  line-height: 1.05;
+  transition: color 0.5s var(--ease-expo), transform 0.4s var(--ease-expo);
+}
+
+.svc-row:hover .svc-title {
+  color: var(--white);
+  transform: translateX(6px);
+}
+
+.svc-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+  border: 1px solid rgba(0,0,0,0.15);
+  padding: 0.22rem 0.65rem;
+  transition: color 0.5s var(--ease-expo), border-color 0.5s var(--ease-expo);
+}
+
+.svc-row:hover .svc-tag {
+  color: rgba(255,255,255,0.5);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.svc-desc {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+  line-height: 1.75;
+  margin: 0;
+  max-width: 540px;
+  transition: color 0.5s var(--ease-expo);
+}
+
+.svc-row:hover .svc-desc { color: rgba(255,255,255,0.55); }
+
+/* Arrow */
+.svc-arrow {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--black);
+  transition:
+    color 0.5s var(--ease-expo),
+    border-color 0.5s var(--ease-expo),
+    transform 0.35s var(--ease-expo);
+}
+
+.svc-row:hover .svc-arrow {
+  color: var(--white);
+  border-color: rgba(255,255,255,0.25);
+  transform: rotate(45deg);
+}
+
+/* Reveal animation */
+.svc-row.reveal,
+.svc-header.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 0.9s var(--ease-expo),
+    transform 0.9s var(--ease-expo);
+}
+
+.svc-row.reveal.in-view,
+.svc-header.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .svc-section { padding: 6rem 1.5rem; }
+  .svc-header { flex-direction: column; align-items: flex-start; gap: 1.5rem; padding-bottom: 2.5rem; }
+  .svc-row {
+    grid-template-columns: 60px 1fr 44px;
+    gap: 1.4rem;
+    padding: 2.2rem 0.5rem;
+  }
+  .svc-num { font-size: 1.6rem; }
+}
+
+@media (max-width: 560px) {
+  .svc-row { grid-template-columns: 50px 1fr; }
+  .svc-arrow { display: none; }
+}

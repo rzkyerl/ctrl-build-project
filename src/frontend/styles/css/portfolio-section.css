@@ -1,0 +1,189 @@
+/* ═══════════════════════════════════════════════════
+   PORTFOLIO — Infinite marquee, dark theme, overlays
+═══════════════════════════════════════════════════ */
+.pf-section {
+  padding: 7rem 0 6rem;
+  background: var(--off-black);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Edge fades */
+.pf-section::before,
+.pf-section::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 160px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.pf-section::before {
+  left: 0;
+  background: linear-gradient(to right, var(--off-black), transparent);
+}
+
+.pf-section::after {
+  right: 0;
+  background: linear-gradient(to left, var(--off-black), transparent);
+}
+
+/* Section header */
+.pf-header {
+  padding: 0 3rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pf-big-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 8rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: var(--white);
+  line-height: 0.95;
+  margin: 0;
+}
+
+/* Marquee track */
+.pf-marquee-row {
+  display: flex;
+  width: max-content;
+  gap: 14px;
+  padding: 7px 0;
+}
+
+.pf-marquee-row--forward  { animation: marquee-left  45s linear infinite; }
+.pf-marquee-row--reverse  { animation: marquee-right 45s linear infinite; }
+
+.pf-section:hover .pf-marquee-row { animation-play-state: paused; }
+
+@keyframes marquee-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+/* Image card */
+.pf-marquee-img {
+  flex-shrink: 0;
+  width: 520px;
+  height: 300px;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  cursor: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+.pf-marquee-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  filter: grayscale(100%) brightness(0.75);
+  transition: filter 0.6s var(--ease-expo), transform 0.7s var(--ease-expo);
+}
+
+.pf-marquee-img:hover img {
+  filter: grayscale(0%) brightness(0.9);
+  transform: scale(1.04);
+}
+
+/* Hover overlay with project info */
+.pf-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 55%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.4rem 1.6rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s var(--ease-expo), transform 0.4s var(--ease-expo);
+}
+
+.pf-marquee-img:hover .pf-img-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pf-img-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+  display: block;
+}
+
+.pf-img-cat {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+/* Button */
+.pf-btn-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 4rem;
+  position: relative;
+  z-index: 10;
+}
+
+.pf-view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1rem 2.2rem;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #000;
+  background: #fff;
+  border: 1px solid #fff;
+  border-radius: 100px;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition:
+    background 0.4s var(--ease-expo),
+    color 0.4s var(--ease-expo),
+    transform 0.3s var(--ease-expo),
+    box-shadow 0.4s ease;
+}
+
+.pf-view-all-btn:hover {
+  background: transparent;
+  color: #fff;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(255,255,255,0.1);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .pf-marquee-img { width: 380px; height: 220px; }
+  .pf-section::before, .pf-section::after { width: 80px; }
+}
+
+@media (max-width: 640px) {
+  .pf-section { padding: 4rem 0 4rem; }
+  .pf-header { padding: 0 1.5rem 2.5rem; }
+  .pf-marquee-img { width: 280px; height: 160px; border-radius: 4px; }
+  .pf-section::before, .pf-section::after { width: 40px; }
+  .pf-btn-container { margin-top: 2.5rem; }
+}

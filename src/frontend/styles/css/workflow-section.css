@@ -1,0 +1,179 @@
+/* ═══════════════════════════════════════════════════
+   WORKFLOW SECTION — Dark, editorial, big numbers
+═══════════════════════════════════════════════════ */
+.wf-section {
+  position: relative;
+  padding: 9rem 3rem;
+  background: var(--black);
+  overflow: hidden;
+}
+
+/* Giant background text */
+.wf-bg-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: clamp(10rem, 20vw, 22rem);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  color: rgba(255,255,255,0.02);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+
+.wf-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+.wf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 3rem;
+  margin-bottom: 4rem;
+  flex-wrap: wrap;
+}
+
+/* Animated divider line */
+.wf-line-draw {
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin-bottom: 4rem;
+  overflow: hidden;
+}
+
+.wf-line-draw-inner {
+  height: 100%;
+  background: rgba(255,255,255,0.25);
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.4s var(--ease-expo);
+}
+
+.wf-line-draw.in-view .wf-line-draw-inner {
+  transform: scaleX(1);
+}
+
+/* Steps grid */
+.wf-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+}
+
+/* Step card */
+.wf-step {
+  position: relative;
+  padding: 2.5rem 2rem 2.5rem 0;
+  border-left: 1px solid rgba(255,255,255,0.06);
+  padding-left: 1.8rem;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.9s var(--ease-expo), transform 0.9s var(--ease-expo);
+}
+
+.wf-step.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Giant bg number per card */
+.wf-step-bg-num {
+  position: absolute;
+  bottom: -0.2rem;
+  right: -0.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(6rem, 10vw, 10rem);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  color: rgba(255,255,255,0.04);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.wf-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.wf-step-num {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+}
+
+.wf-title {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--white);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.wf-desc {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* Hover state — subtle highlight */
+.wf-step::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.02);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.wf-step:hover::before { opacity: 1; }
+.wf-step:hover .wf-step-bg-num { color: rgba(255,255,255,0.07); }
+.wf-step:hover .wf-title { color: #fff; }
+.wf-step:hover .wf-desc { color: rgba(255,255,255,0.55); }
+
+/* Stagger delays */
+.wf-step:nth-child(2) { transition-delay: 0.12s; }
+.wf-step:nth-child(3) { transition-delay: 0.24s; }
+.wf-step:nth-child(4) { transition-delay: 0.36s; }
+
+/* Header reveal */
+.wf-header.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.9s var(--ease-expo), transform 0.9s var(--ease-expo);
+}
+.wf-header.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .wf-section { padding: 6rem 1.5rem; }
+  .wf-list { grid-template-columns: 1fr 1fr; gap: 2px; }
+  .wf-header { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+}
+
+@media (max-width: 560px) {
+  .wf-list { grid-template-columns: 1fr; }
+  .wf-step { border-left: none; border-top: 1px solid rgba(255,255,255,0.06); padding: 2rem 0; }
+}

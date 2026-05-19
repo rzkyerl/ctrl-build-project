@@ -1,6 +1,6 @@
 import '../styles/css/footer.css'
 
-const logoWhite = new URL('../assets/images/CTRLBuild-White-Footer.png', import.meta.url).href
+const logoWhite = new URL('../../assets/images/CTRLBuild-White-Footer.png', import.meta.url).href
 
 const links = [
   { label: 'Layanan',    href: '#services' },
@@ -11,8 +11,8 @@ const links = [
 
 const socials = [
   { label: 'Instagram', href: 'https://instagram.com/ctrlbuild_' },
-  { label: 'Email', href: 'mailto:ctrlbuild2023@gmail.com' },
-  { label: 'WhatsApp', href: 'https://wa.me/6285314012136' },
+  { label: 'Email',     href: 'mailto:ctrlbuild2023@gmail.com' },
+  { label: 'WhatsApp',  href: 'https://wa.me/6285314012136' },
 ]
 
 export const Footer = () => {
@@ -20,13 +20,19 @@ export const Footer = () => {
     <footer className="ft-footer" id="footer">
       <div className="ft-container">
 
+        {/* Top row */}
         <div className="ft-top">
           {/* Brand */}
           <div className="ft-brand">
             <img src={logoWhite} alt="CTRLBuild" className="ft-logo" />
             <p className="ft-tagline">
-              Jasa & Joki pembuatan website,<br />mobile apps, dan UI/UX design.
+              Jasa &amp; Joki pembuatan website,<br />mobile apps, dan UI/UX design.
             </p>
+            {/* Status pill */}
+            <div className="ft-status" aria-label="Status: Open for projects">
+              <span className="ft-status-dot" aria-hidden="true" />
+              Open for Projects
+            </div>
           </div>
 
           {/* Nav */}
@@ -57,9 +63,10 @@ export const Footer = () => {
 
         <div className="ft-divider" />
 
+        {/* Bottom row */}
         <div className="ft-bottom">
           <p className="ft-copy">© {new Date().getFullYear()} CTRLBuild. Semua hak dilindungi.</p>
-          <span className="ft-copy">PEMBANGUN NEGERI</span>
+          <span className="ft-copy ft-tagline-bottom">PEMBANGUN NEGERI</span>
         </div>
 
       </div>
