@@ -22,6 +22,11 @@ export class PortfolioController {
     return this.portfolioService.findOne(+id);
   }
 
+  @Get('slug/:slug')
+  findBySlug(@Param('slug') slug: string) {
+    return this.portfolioService.findBySlug(slug);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePortfolioDto: UpdatePortfolioDto) {
     return this.portfolioService.update(+id, updatePortfolioDto);
