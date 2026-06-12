@@ -12,7 +12,26 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id         Int         @id @default(autoincrement())
+  email      String      @unique
+  name       String?
+  password   String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Portfolio {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
+  title       String
+  category    String
+  imgUrl      String?
+  overview    String?
+  goals       String?
+  features    Json?
+  architecture String?
+  techStack   String[]
+  link        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
