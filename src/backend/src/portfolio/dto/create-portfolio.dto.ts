@@ -1,1 +1,12 @@
-export class CreatePortfolioDto {}
+export class CreatePortfolioDto {
+  slug: string;
+  title: string;
+  category: string;
+  imgUrl?: string;
+  overview?: string;
+  goals?: string;
+  features?: any;
+  architecture?: string;
+  techStack: string[];
+  link?: string;
+}

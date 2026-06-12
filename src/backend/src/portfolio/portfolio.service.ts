@@ -1,26 +1,44 @@
 import { Injectable } from '@nestjs/common';
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PortfolioService {
+  constructor(private prisma: PrismaService) {}
+
   create(createPortfolioDto: CreatePortfolioDto) {
-    return 'This action adds a new portfolio';
+    return this.prisma.portfolio.create({
+      data: createPortfolioDto,
+    });
   }
 
   findAll() {
-    return `This action returns all portfolio`;
+    return this.prisma.portfolio.findMany();
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} portfolio`;
+    return this.prisma.portfolio.findUnique({
+      where: { id },
+    });
+  }
+
+  findBySlug(slug: string) {
+    return this.prisma.portfolio.findUnique({
+      where: { slug },
+    });
   }
 
   update(id: number, updatePortfolioDto: UpdatePortfolioDto) {
-    return `This action updates a #${id} portfolio`;
+    return this.prisma.portfolio.update({
+      where: { id },
+      data: updatePortfolioDto,
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} portfolio`;
+    return this.prisma.portfolio.delete({
+      where: { id },
+    });
   }
 }
