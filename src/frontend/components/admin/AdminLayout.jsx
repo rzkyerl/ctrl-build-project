@@ -57,6 +57,14 @@ export const AdminLayout = () => {
                 Portfolios
               </Link>
             </li>
+            <li style={{ marginBottom: '0.25rem' }}>
+              <Link
+                to="/admin/tech-stacks"
+                className={`admin-nav-link ${isActive('/admin/tech-stacks') ? 'active' : ''}`}
+              >
+                Tech Stacks
+              </Link>
+            </li>
           </ul>
         </nav>
 
