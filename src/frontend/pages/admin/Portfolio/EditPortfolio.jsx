@@ -30,10 +30,8 @@ export const EditPortfolio = () => {
     setLoading(true);
 
     try {
-      // Process techStack from comma-separated to array
       const processedData = {
         ...formData,
-        techStack: formData.techStack.split(',').map(s => s.trim()).filter(s => s),
         features: formData.features ? JSON.parse(formData.features) : null,
       };
 

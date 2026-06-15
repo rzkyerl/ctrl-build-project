@@ -7,6 +7,7 @@ import { Textarea } from './Textarea';
 import { FormGroup } from './FormGroup';
 import { ErrorMessage } from './ErrorMessage';
 import { PageHeader } from './PageHeader';
+import { api } from '../../services/api';
 
 export const PortfolioForm = ({ 
   initialData = null, 
@@ -26,9 +27,25 @@ export const PortfolioForm = ({
     goals: '',
     features: '',
     architecture: '',
-    techStack: '',
+    techStack: [],
     link: '',
   });
+  const [availableTechStacks, setAvailableTechStacks] = useState([]);
+  const [fetchingTechStacks, setFetchingTechStacks] = useState(true);
+
+  useEffect(() => {
+    const fetchTechStacks = async () => {
+      try {
+        const data = await api.getStacks();
+        setAvailableTechStacks(data);
+      } catch (err) {
+        console.error('Failed to fetch tech stacks:', err);
+      } finally {
+        setFetchingTechStacks(false);
+      }
+    };
+    fetchTechStacks();
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -41,7 +58,7 @@ export const PortfolioForm = ({
         goals: initialData.goals || '',
         features: initialData.features ? JSON.stringify(initialData.features, null, 2) : '',
         architecture: initialData.architecture || '',
-        techStack: initialData.techStack ? initialData.techStack.join(', ') : '',
+        techStack: initialData.techStack ? initialData.techStack.map(t => t.id) : [],
         link: initialData.link || '',
       });
     }
@@ -51,6 +68,18 @@ export const PortfolioForm = ({
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleTechStackChange = (techStackId) => {
+    setFormData(prev => {
+      const isSelected = prev.techStack.includes(techStackId);
+      return {
+        ...prev,
+        techStack: isSelected 
+          ? prev.techStack.filter(id => id !== techStackId) 
+          : [...prev.techStack, techStackId]
+      };
     });
   };
 
@@ -155,15 +184,66 @@ export const PortfolioForm = ({
           />
         </FormGroup>
         
-        <FormGroup label="Tech Stack (comma separated) *">
-          <Input
-            type="text"
-            name="techStack"
-            value={formData.techStack}
-            onChange={handleChange}
-            required
-            placeholder="React, Node.js, PostgreSQL"
-          />
+        <FormGroup label="Tech Stack *">
+          {fetchingTechStacks ? (
+            <p style={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              color: 'rgba(255,255,255,.4)',
+              margin: 0,
+            }}>
+              Loading tech stacks...
+            </p>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+            }}>
+              {availableTechStacks.map(techStack => (
+                <label
+                  key={techStack.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    background: formData.techStack.includes(techStack.id) 
+                      ? 'rgba(255,255,255,0.15)' 
+                      : 'rgba(255,255,255,0.05)',
+                    border: formData.techStack.includes(techStack.id) 
+                      ? '1px solid rgba(255,255,255,0.3)' 
+                      : '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '2px',
+                    cursor: 'pointer',
+                    fontFamily: "'Inter', system-ui, sans-serif",
+                    fontSize: '0.875rem',
+                    color: '#ffffff',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.techStack.includes(techStack.id)}
+                    onChange={() => handleTechStackChange(techStack.id)}
+                    style={{
+                      margin: 0,
+                    }}
+                  />
+                  {techStack.icon && (
+                    <img
+                      src={techStack.icon}
+                      alt={techStack.name}
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        objectFit: 'contain',
+                      }}
+                    />
+                  )}
+                  {techStack.name}
+                </label>
+              ))}
+            </div>
+          )}
         </FormGroup>
         
         <FormGroup label="Live Link">
