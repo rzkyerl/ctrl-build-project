@@ -315,3 +315,16 @@ body::after {
 a, button, [role="button"], input, textarea, select, label {
   cursor: none;
 }
+
+/* Override for admin pages to show default cursor */
+[data-admin-page],
+[data-admin-page] * {
+  cursor: auto !important;
+}
+
+/* Make sure interactive elements on admin have proper pointer cursor */
+[data-admin-page] button,
+[data-admin-page] a,
+[data-admin-page] [role="button"] {
+  cursor: pointer !important;
+}

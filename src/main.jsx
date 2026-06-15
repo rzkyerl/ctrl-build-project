@@ -5,11 +5,14 @@ import './index.css'
 import App from './App.jsx'
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/react"
+import { AuthProvider } from './frontend/contexts/AuthContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
       <Analytics />
       <SpeedInsights />
     </BrowserRouter>
