@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../../services/api';
+import { PageHeader } from '../../components/admin/PageHeader';
+import { Button } from '../../components/admin/Button';
+import { ErrorMessage } from '../../components/admin/ErrorMessage';
+import '../../styles/css/admin.css';
 
 export const ShowPortfolio = () => {
   const { id } = useParams();
@@ -37,15 +41,8 @@ export const ShowPortfolio = () => {
 
   if (error) {
     return (
-      <div data-admin-page style={{
-        padding: '4rem 0',
-        textAlign: 'center',
-      }}>
-        <p style={{
-          fontFamily: "'Inter', system-ui, sans-serif",
-          color: '#ff6b6b',
-          marginBottom: '1rem',
-        }}>{error}</p>
+      <div data-admin-page style={{ padding: '4rem 0', textAlign: 'center' }}>
+        <ErrorMessage message={error} />
         <Link
           to="/admin/portfolios"
           style={{
@@ -62,93 +59,29 @@ export const ShowPortfolio = () => {
 
   return (
     <div data-admin-page>
-      <div style={{ marginBottom: '2.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <Link 
-            to="/admin/portfolios"
-            style={{
-              color: 'rgba(255,255,255,.4)',
-              fontSize: '1.5rem',
-              textDecoration: 'none',
-              transition: 'color 0.2s ease',
-            }}
-            onMouseEnter={(e) => e.target.style.color = '#ffffff'}
-            onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,.4)'}
-          >
-            ←
-          </Link>
-          <div>
-            <h1 style={{
-              fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif",
-              fontSize: '2rem',
-              fontWeight: 700,
-              color: '#ffffff',
-              marginBottom: '0.5rem',
-              letterSpacing: '-0.02em',
-            }}>
-              {portfolio.title}
-            </h1>
-            <p style={{
-              fontFamily: "'Inter', system-ui, sans-serif",
-              fontSize: '0.9rem',
-              color: 'rgba(255,255,255,.45)',
-              margin: 0,
-            }}>
-              Detail portfolio proyek
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={portfolio.title}
+        subtitle="Detail portfolio proyek"
+        backTo="/admin/portfolios"
+      />
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
         <Link
           to={`/admin/portfolios/${portfolio.id}/edit`}
-          style={{
-            padding: '0.9rem 1.75rem',
-            background: 'transparent',
-            color: 'rgba(255,255,255,.6)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '2px',
-            fontFamily: "'Inter', system-ui, sans-serif",
-            fontSize: '0.7rem',
-            fontWeight: 700,
-            letterSpacing: '.18em',
-            textTransform: 'uppercase',
-            textDecoration: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.borderColor = 'rgba(255,255,255,0.3)';
-            e.target.style.color = '#ffffff';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.borderColor = 'rgba(255,255,255,0.15)';
-            e.target.style.color = 'rgba(255,255,255,.6)';
-          }}
+          className="admin-btn admin-btn-secondary"
         >
           Edit
         </Link>
       </div>
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
         gap: '2rem',
       }}>
         <div>
           <div style={{ marginBottom: '2rem' }}>
-            <p style={{
-              fontFamily: "'Inter', system-ui, sans-serif",
-              fontSize: '0.65rem',
-              fontWeight: 600,
-              letterSpacing: '.18em',
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,.3)',
-              marginBottom: '0.5rem',
-            }}>
-              Slug
-            </p>
+            <p className="admin-stat-label">Slug</p>
             <p style={{
               fontFamily: "'Inter', system-ui, sans-serif",
               fontSize: '0.95rem',
@@ -160,17 +93,7 @@ export const ShowPortfolio = () => {
           </div>
 
           <div style={{ marginBottom: '2rem' }}>
-            <p style={{
-              fontFamily: "'Inter', system-ui, sans-serif",
-              fontSize: '0.65rem',
-              fontWeight: 600,
-              letterSpacing: '.18em',
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,.3)',
-              marginBottom: '0.5rem',
-            }}>
-              Category
-            </p>
+            <p className="admin-stat-label">Category</p>
             <p style={{
               fontFamily: "'Inter', system-ui, sans-serif",
               fontSize: '0.95rem',
@@ -183,17 +106,7 @@ export const ShowPortfolio = () => {
 
           {portfolio.imgUrl && (
             <div style={{ marginBottom: '2rem' }}>
-              <p style={{
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                letterSpacing: '.18em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,.3)',
-                marginBottom: '0.5rem',
-              }}>
-                Image URL
-              </p>
+              <p className="admin-stat-label">Image URL</p>
               <a
                 href={portfolio.imgUrl}
                 target="_blank"
@@ -212,17 +125,7 @@ export const ShowPortfolio = () => {
 
           {portfolio.overview && (
             <div style={{ marginBottom: '2rem' }}>
-              <p style={{
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                letterSpacing: '.18em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,.3)',
-                marginBottom: '0.5rem',
-              }}>
-                Overview
-              </p>
+              <p className="admin-stat-label">Overview</p>
               <p style={{
                 fontFamily: "'Inter', system-ui, sans-serif",
                 fontSize: '0.95rem',
@@ -237,17 +140,7 @@ export const ShowPortfolio = () => {
 
           {portfolio.goals && (
             <div style={{ marginBottom: '2rem' }}>
-              <p style={{
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                letterSpacing: '.18em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,.3)',
-                marginBottom: '0.5rem',
-              }}>
-                Goals
-              </p>
+              <p className="admin-stat-label">Goals</p>
               <p style={{
                 fontFamily: "'Inter', system-ui, sans-serif",
                 fontSize: '0.95rem',
@@ -264,17 +157,7 @@ export const ShowPortfolio = () => {
         <div>
           {portfolio.features && (
             <div style={{ marginBottom: '2rem' }}>
-              <p style={{
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                letterSpacing: '.18em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,.3)',
-                marginBottom: '0.5rem',
-              }}>
-                Features
-              </p>
+              <p className="admin-stat-label">Features</p>
               <ul style={{
                 paddingLeft: '1.25rem',
                 margin: 0,
@@ -305,17 +188,7 @@ export const ShowPortfolio = () => {
 
           {portfolio.architecture && (
             <div style={{ marginBottom: '2rem' }}>
-              <p style={{
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                letterSpacing: '.18em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,.3)',
-                marginBottom: '0.5rem',
-              }}>
-                Architecture
-              </p>
+              <p className="admin-stat-label">Architecture</p>
               <p style={{
                 fontFamily: "'Inter', system-ui, sans-serif",
                 fontSize: '0.95rem',
@@ -330,17 +203,7 @@ export const ShowPortfolio = () => {
 
           {portfolio.techStack && (
             <div style={{ marginBottom: '2rem' }}>
-              <p style={{
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                letterSpacing: '.18em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,.3)',
-                marginBottom: '0.5rem',
-              }}>
-                Tech Stack
-              </p>
+              <p className="admin-stat-label">Tech Stack</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {portfolio.techStack.map((tech, i) => (
                   <span key={i} style={{
@@ -361,17 +224,7 @@ export const ShowPortfolio = () => {
 
           {portfolio.link && (
             <div style={{ marginBottom: '2rem' }}>
-              <p style={{
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                letterSpacing: '.18em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,.3)',
-                marginBottom: '0.5rem',
-              }}>
-                Live Link
-              </p>
+              <p className="admin-stat-label">Live Link</p>
               <a
                 href={portfolio.link}
                 target="_blank"
