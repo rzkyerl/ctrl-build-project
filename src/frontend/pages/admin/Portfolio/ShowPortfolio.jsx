@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api } from '../../services/api';
-import { PageHeader } from '../../components/admin/PageHeader';
-import { Button } from '../../components/admin/Button';
-import { ErrorMessage } from '../../components/admin/ErrorMessage';
-import '../../styles/css/admin.css';
+import { api } from '../../../services/api';
+import { PageHeader } from '../../../components/admin/PageHeader';
+import { Button } from '../../../components/admin/Button';
+import { ErrorMessage } from '../../../components/admin/ErrorMessage';
+import '../../../styles/css/admin.css';
 
 export const ShowPortfolio = () => {
   const { id } = useParams();

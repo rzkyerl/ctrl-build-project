@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../../services/api';
-import { DeleteConfirmModal } from '../../components/admin/DeleteConfirmModal';
-import { PageHeader } from '../../components/admin/PageHeader';
-import { Button } from '../../components/admin/Button';
-import '../../styles/css/admin.css';
+import { api } from '../../../services/api';
+import { DeleteConfirmModal } from '../../../components/admin/DeleteConfirmModal';
+import { PageHeader } from '../../../components/admin/PageHeader';
+import { Button } from '../../../components/admin/Button';
+import '../../../styles/css/admin.css';
 
 export const Portfolios = () => {
   const [portfolios, setPortfolios] = useState([]);

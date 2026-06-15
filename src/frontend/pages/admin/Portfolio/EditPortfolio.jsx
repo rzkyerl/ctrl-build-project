@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api } from '../../services/api';
-import { PortfolioForm } from '../../components/admin/PortfolioForm';
+import { api } from '../../../services/api';
+import { PortfolioForm } from '../../../components/admin/PortfolioForm';
 
 export const EditPortfolio = () => {
   const { id } = useParams();
