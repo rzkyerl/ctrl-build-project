@@ -329,3 +329,12 @@ body.cursor-hover #cursor-dot {
   .nav-hamburger { display: flex; }
   .navbar { padding: 0 1.5rem; }
 }
+
+/* Restore default cursor for admin pages */
+[data-admin-page] {
+  cursor: auto !important;
+}
+
+[data-admin-page] * {
+  cursor: auto !important;
+}
