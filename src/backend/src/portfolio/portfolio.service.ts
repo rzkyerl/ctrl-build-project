@@ -9,30 +9,57 @@ export class PortfolioService {
 
   create(createPortfolioDto: CreatePortfolioDto) {
     return this.prisma.portfolio.create({
-      data: createPortfolioDto,
+      data: {
+        ...createPortfolioDto,
+        techStack: {
+          connect: createPortfolioDto.techStack.map(id => ({ id })),
+        },
+      },
+      include: {
+        techStack: true,
+      },
     });
   }
 
   findAll() {
-    return this.prisma.portfolio.findMany();
+    return this.prisma.portfolio.findMany({
+      include: {
+        techStack: true,
+      },
+    });
   }
 
   findOne(id: number) {
     return this.prisma.portfolio.findUnique({
       where: { id },
+      include: {
+        techStack: true,
+      },
     });
   }
 
   findBySlug(slug: string) {
     return this.prisma.portfolio.findUnique({
       where: { slug },
+      include: {
+        techStack: true,
+      },
     });
   }
 
   update(id: number, updatePortfolioDto: UpdatePortfolioDto) {
+    const { techStack, ...data } = updatePortfolioDto;
     return this.prisma.portfolio.update({
       where: { id },
-      data: updatePortfolioDto,
+      data: {
+        ...data,
+        techStack: techStack ? {
+          set: techStack.map(id => ({ id })),
+        } : undefined,
+      },
+      include: {
+        techStack: true,
+      },
     });
   }
 
