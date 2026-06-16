@@ -84,6 +84,34 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  async getStacks() {
+    return this.request('/stacks');
+  }
+
+  async getStack(id) {
+    return this.request(`/stacks/${id}`);
+  }
+
+  async createStack(data) {
+    return this.request('/stacks', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateStack(id, data) {
+    return this.request(`/stacks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteStack(id) {
+    return this.request(`/stacks/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const api = new ApiService();

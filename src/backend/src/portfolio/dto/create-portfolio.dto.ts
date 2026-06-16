@@ -7,6 +7,6 @@ export class CreatePortfolioDto {
   goals?: string;
   features?: any;
   architecture?: string;
-  techStack: string[];
+  techStack: number[];
   link?: string;
 }

@@ -13,6 +13,10 @@ import { Portfolios }           from './frontend/pages/admin/Portfolio/Portfolio
 import { CreatePortfolio }      from './frontend/pages/admin/Portfolio/CreatePortfolio'
 import { EditPortfolio }        from './frontend/pages/admin/Portfolio/EditPortfolio'
 import { ShowPortfolio }        from './frontend/pages/admin/Portfolio/ShowPortfolio'
+import { TechStacks }           from './frontend/pages/admin/TechStack/TechStacks'
+import { CreateTechStack }      from './frontend/pages/admin/TechStack/CreateTechStack'
+import { EditTechStack }        from './frontend/pages/admin/TechStack/EditTechStack'
+import { ShowTechStack }        from './frontend/pages/admin/TechStack/ShowTechStack'
 import { AdminLayout }          from './frontend/components/admin/AdminLayout'
 import { ProtectedRoute }       from './frontend/components/admin/ProtectedRoute'
 import { useAuth }              from './frontend/contexts/AuthContext'
@@ -189,6 +193,10 @@ function App() {
                 <Route path="/admin/portfolios/create" element={<CreatePortfolio />} />
                 <Route path="/admin/portfolios/:id" element={<ShowPortfolio />} />
                 <Route path="/admin/portfolios/:id/edit" element={<EditPortfolio />} />
+                <Route path="/admin/tech-stacks" element={<TechStacks />} />
+                <Route path="/admin/tech-stacks/create" element={<CreateTechStack />} />
+                <Route path="/admin/tech-stacks/:id" element={<ShowTechStack />} />
+                <Route path="/admin/tech-stacks/:id/edit" element={<EditTechStack />} />
                 <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               </Route>
             </Route>

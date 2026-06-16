@@ -1,28 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../../services/api';
-import { PortfolioForm } from '../../../components/admin/PortfolioForm';
+import { TechStackForm } from '../../../components/admin/TechStackForm';
 
-export const EditPortfolio = () => {
+export const EditTechStack = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
-  const [portfolio, setPortfolio] = useState(null);
+  const [techStack, setTechStack] = useState(null);
 
   useEffect(() => {
-    const fetchPortfolio = async () => {
+    const fetchTechStack = async () => {
       try {
-        const data = await api.getPortfolioById(id);
-        setPortfolio(data);
+        const data = await api.getStack(id);
+        setTechStack(data);
       } catch (err) {
-        setError(err.message || 'Failed to fetch portfolio');
+        setError(err.message || 'Failed to fetch tech stack');
       } finally {
         setFetching(false);
       }
     };
-    fetchPortfolio();
+    fetchTechStack();
   }, [id]);
 
   const handleSubmit = async (formData) => {
@@ -30,15 +30,10 @@ export const EditPortfolio = () => {
     setLoading(true);
 
     try {
-      const processedData = {
-        ...formData,
-        features: formData.features ? JSON.parse(formData.features) : null,
-      };
-
-      await api.updatePortfolio(id, processedData);
-      navigate('/admin/portfolios');
+      await api.updateStack(id, formData);
+      navigate('/admin/tech-stacks');
     } catch (err) {
-      setError(err.message || 'Failed to update portfolio');
+      setError(err.message || 'Failed to update tech stack');
     } finally {
       setLoading(false);
     }
@@ -58,14 +53,14 @@ export const EditPortfolio = () => {
   }
 
   return (
-    <PortfolioForm
-      initialData={portfolio}
+    <TechStackForm
+      initialData={techStack}
       onSubmit={handleSubmit}
       loading={loading}
       error={error}
-      submitText="Update Portfolio"
-      title="Edit Portfolio"
-      subtitle="Ubah detail portfolio proyek"
+      submitText="Update Tech Stack"
+      title="Edit Tech Stack"
+      subtitle="Ubah detail tech stack"
     />
   );
 };
