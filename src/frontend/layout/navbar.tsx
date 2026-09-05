@@ -140,7 +140,7 @@ export function Navbar() {
           </a>
         ))}
         <a
-          href="https://wa.me/6285314012136"
+          href="https://wa.me/6281283481468"
           target="_blank"
           rel="noopener noreferrer"
           className="nav-mobile-link"
