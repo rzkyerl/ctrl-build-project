@@ -12,7 +12,7 @@ const links = [
 const socials = [
   { label: 'Instagram', href: 'https://instagram.com/ctrlbuild_' },
   { label: 'Email',     href: 'mailto:ctrlbuild2023@gmail.com' },
-  { label: 'WhatsApp',  href: 'https://wa.me/6285314012136' },
+  { label: 'WhatsApp',  href: 'https://wa.me/6281283481468' },
 ]
 
 export const Footer = () => {
@@ -28,11 +28,6 @@ export const Footer = () => {
             <p className="ft-tagline">
               Jasa &amp; Joki pembuatan website,<br />mobile apps, dan UI/UX design.
             </p>
-            {/* Status pill */}
-            <div className="ft-status" aria-label="Status: Open for projects">
-              <span className="ft-status-dot" aria-hidden="true" />
-              Open for Projects
-            </div>
           </div>
 
           {/* Nav */}

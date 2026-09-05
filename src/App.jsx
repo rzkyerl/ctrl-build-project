@@ -100,45 +100,84 @@ function MagneticEffect() {
     const SELECTORS = '.btn-primary, .ct-btn--primary, .pf-view-all-btn, .nav-cta'
     const STRENGTH  = 0.35
     const RADIUS    = 90
-    const cleanups  = []
 
-    const apply = () => {
-      document.querySelectorAll(SELECTORS).forEach(btn => {
-        if (btn.__magneticBound) return   // avoid double-binding
-        btn.__magneticBound = true
+    // Map<HTMLElement, { rect, active }>
+    // rect di-cache saat mouseenter, bukan setiap mousemove
+    const btnData = new Map()
+    const btnCleanups = []
 
-        const onMove = (e) => {
-          const r    = btn.getBoundingClientRect()
-          const cx   = r.left + r.width  / 2
-          const cy   = r.top  + r.height / 2
-          const dx   = e.clientX - cx
-          const dy   = e.clientY - cy
+    // Satu rAF pending untuk semua button — throttle otomatis ke 60fps
+    let pendingRaf = null
+    let mouseX = 0
+    let mouseY = 0
+
+    const onMouseMove = (e) => {
+      mouseX = e.clientX
+      mouseY = e.clientY
+
+      if (pendingRaf !== null) return   // sudah ada frame yang dijadwalkan
+      pendingRaf = requestAnimationFrame(() => {
+        pendingRaf = null
+        btnData.forEach(({ rect }, btn) => {
+          const cx   = rect.left + rect.width  / 2
+          const cy   = rect.top  + rect.height / 2
+          const dx   = mouseX - cx
+          const dy   = mouseY - cy
           const dist = Math.sqrt(dx * dx + dy * dy)
           if (dist < RADIUS) {
             const pull = (1 - dist / RADIUS) * STRENGTH
             btn.style.transform = `translate(${dx * pull}px, ${dy * pull}px)`
-            btn.style.transition = 'transform .1s linear'
           }
-        }
-        const onLeave = () => {
-          btn.style.transform = ''
-          btn.style.transition = 'transform .65s cubic-bezier(0.19,1,0.22,1)'
-        }
-
-        document.addEventListener('mousemove', onMove, { passive: true })
-        btn.addEventListener('mouseleave', onLeave)
-        cleanups.push(() => {
-          document.removeEventListener('mousemove', onMove)
-          btn.removeEventListener('mouseleave', onLeave)
         })
       })
     }
+
+    const bindBtn = (btn) => {
+      if (btn.__magneticBound) return
+      btn.__magneticBound = true
+
+      const onEnter = () => {
+        // Cache rect sekali saat mouse masuk area button
+        btnData.set(btn, { rect: btn.getBoundingClientRect() })
+        btn.style.transition = 'transform .1s linear'
+        btn.style.willChange = 'transform'
+      }
+      const onLeave = () => {
+        btnData.delete(btn)
+        btn.style.transform = ''
+        btn.style.transition = 'transform .65s cubic-bezier(0.19,1,0.22,1)'
+        const onEnd = () => {
+          btn.style.willChange = ''
+          btn.removeEventListener('transitionend', onEnd)
+        }
+        btn.addEventListener('transitionend', onEnd)
+      }
+
+      btn.addEventListener('mouseenter', onEnter)
+      btn.addEventListener('mouseleave', onLeave)
+      btnCleanups.push(() => {
+        btn.removeEventListener('mouseenter', onEnter)
+        btn.removeEventListener('mouseleave', onLeave)
+      })
+    }
+
+    const apply = () => {
+      document.querySelectorAll(SELECTORS).forEach(bindBtn)
+    }
+
+    // Satu listener global untuk semua button — jauh lebih efisien
+    document.addEventListener('mousemove', onMouseMove, { passive: true })
 
     const obs = new MutationObserver(apply)
     obs.observe(document.body, { childList: true, subtree: true })
     apply()
 
-    return () => { cleanups.forEach(fn => fn()); obs.disconnect() }
+    return () => {
+      if (pendingRaf !== null) cancelAnimationFrame(pendingRaf)
+      document.removeEventListener('mousemove', onMouseMove)
+      btnCleanups.forEach(fn => fn())
+      obs.disconnect()
+    }
   }, [])
 
   return null

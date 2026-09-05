@@ -23,31 +23,58 @@ export const WorkflowSection = () => {
     )
     revealEls.forEach(el => revealObs.observe(el))
 
-    /* 3D tilt on each step card */
+    /* 3D tilt on each step card
+     * Fixes:
+     * 1. getBoundingClientRect() dibaca sekali saat mouseenter (bukan tiap mousemove)
+     *    untuk menghindari forced layout per event.
+     * 2. Style mutation di-batch dalam requestAnimationFrame agar tidak bersaing
+     *    dengan scroll handler di main thread.
+     * 3. card.style.transition hanya di-set saat state berubah (enter/leave),
+     *    bukan setiap frame mousemove.
+     */
     const cards = section.querySelectorAll<HTMLDivElement>('.wf-step')
     const cleanups: (() => void)[] = []
 
     cards.forEach(card => {
-      const onMove = (e: MouseEvent) => {
-        const r  = card.getBoundingClientRect()
-        const x  = (e.clientX - r.left)  / r.width  - .5
-        const y  = (e.clientY - r.top)   / r.height - .5
-        card.style.transform = `
-          perspective(700px)
-          rotateX(${-y * 10}deg)
-          rotateY(${x * 10}deg)
-          translateZ(12px)
-          translateY(0)
-        `
+      // Cache rect saat mouse masuk — tidak perlu re-read setiap mousemove
+      let rect = { left: 0, top: 0, width: 1, height: 1 }
+      let pendingRaf: number | null = null
+
+      const onEnter = () => {
+        rect = card.getBoundingClientRect()
         card.style.transition = 'transform .05s linear'
+        card.style.willChange = 'transform'
       }
+
+      const onMove = (e: MouseEvent) => {
+        // Batalkan frame sebelumnya jika belum dieksekusi (throttle otomatis ke 60fps)
+        if (pendingRaf !== null) return
+        pendingRaf = requestAnimationFrame(() => {
+          pendingRaf = null
+          const x = (e.clientX - rect.left)  / rect.width  - 0.5
+          const y = (e.clientY - rect.top)   / rect.height - 0.5
+          card.style.transform = `perspective(700px) rotateX(${-y * 10}deg) rotateY(${x * 10}deg) translateZ(12px)`
+        })
+      }
+
       const onLeave = () => {
-        card.style.transform = ''
+        if (pendingRaf !== null) { cancelAnimationFrame(pendingRaf); pendingRaf = null }
         card.style.transition = 'transform .7s cubic-bezier(0.19,1,0.22,1)'
+        card.style.transform = ''
+        // Hapus will-change setelah animasi selesai agar layer tidak terus dipromosikan
+        const onTransitionEnd = () => {
+          card.style.willChange = ''
+          card.removeEventListener('transitionend', onTransitionEnd)
+        }
+        card.addEventListener('transitionend', onTransitionEnd)
       }
+
+      card.addEventListener('mouseenter', onEnter)
       card.addEventListener('mousemove', onMove)
       card.addEventListener('mouseleave', onLeave)
       cleanups.push(() => {
+        if (pendingRaf !== null) cancelAnimationFrame(pendingRaf)
+        card.removeEventListener('mouseenter', onEnter)
         card.removeEventListener('mousemove', onMove)
         card.removeEventListener('mouseleave', onLeave)
       })
@@ -80,7 +107,7 @@ export const WorkflowSection = () => {
             <div
               key={step.id}
               className="wf-step"
-              style={{ transitionDelay: `${i * 0.12}s`, transformStyle: 'preserve-3d' }}
+              style={{ transitionDelay: `${i * 0.12}s` }}
             >
               <span className="wf-step-bg-num" aria-hidden="true">{String(step.id).padStart(2, '0')}</span>
               <div className="wf-step-content">

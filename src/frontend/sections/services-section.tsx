@@ -46,31 +46,6 @@ export const ServicesSection = () => {
       }, { threshold: 0.4 })
       titleObs.observe(titleEl)
     }
-
-    /* 3D tilt on each service row */
-    const rows = section.querySelectorAll<HTMLDivElement>('.svc-row')
-    rows.forEach(row => {
-      const onMove = (e: MouseEvent) => {
-        const r = row.getBoundingClientRect()
-        const x = (e.clientX - r.left) / r.width  - .5  // -0.5 to 0.5
-        const y = (e.clientY - r.top)  / r.height - .5
-        row.style.transform = `perspective(900px) rotateX(${-y * 6}deg) rotateY(${x * 8}deg) translateZ(8px)`
-        row.style.transition = 'transform .05s linear'
-      }
-      const onLeave = () => {
-        row.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0px)'
-        row.style.transition = 'transform .7s cubic-bezier(0.19,1,0.22,1)'
-      }
-      row.addEventListener('mousemove', onMove)
-      row.addEventListener('mouseleave', onLeave)
-    })
-
-    return () => {
-      revealObs.disconnect()
-      rows.forEach(row => {
-        row.replaceWith(row.cloneNode(true)) // clean listeners
-      })
-    }
   }, [])
 
   return (
@@ -85,7 +60,7 @@ export const ServicesSection = () => {
             </h2>
           </div>
           <p className="section-subtitle">
-            Solusi digital lengkap untuk kebutuhan website, aplikasi mobile, dan desain produk — dikerjakan secara profesional.
+            Solusi digital lengkap untuk kebutuhan website, aplikasi mobile, dan desain produk dikerjakan secara profesional.
           </p>
         </div>
 
@@ -99,11 +74,6 @@ export const ServicesSection = () => {
                   <span className="svc-tag">{svc.tag}</span>
                 </div>
                 <p className="svc-desc">{svc.description}</p>
-              </div>
-              <div className="svc-arrow" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M7 17L17 7M17 7H7M17 7v10" />
-                </svg>
               </div>
             </div>
           ))}
