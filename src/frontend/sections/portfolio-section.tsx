@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom'
 import '../styles/css/portfolio-section.css'
 
-import img1 from '../../assets/images/portofolio/3nt-studio/3nt-home-1.png'
-import img2 from '../../assets/images/portofolio/berbagilagi/berbagi-home.png'
-import img3 from '../../assets/images/portofolio/ektm/HomePages.png'
-import img4 from '../../assets/images/portofolio/3nt-studio/3nt-photobooth-online.png'
-import img5 from '../../assets/images/portofolio/the-days/thedays-home.png'
-import img6 from '../../assets/images/portofolio/bookingin/bookingin-home.png'
-import img7 from '../../assets/images/portofolio/anagata-executive/anagata-home.png'
+import img1 from '../../assets/images/portofolio/3nt-studio/3nt-home-1.webp'
+import img2 from '../../assets/images/portofolio/berbagilagi/berbagi-home.webp'
+import img3 from '../../assets/images/portofolio/ektm/HomePages.webp'
+import img4 from '../../assets/images/portofolio/3nt-studio/3nt-photobooth-online.webp'
+import img5 from '../../assets/images/portofolio/the-days/thedays-home.webp'
+import img6 from '../../assets/images/portofolio/bookingin/bookingin-home.webp'
+import img7 from '../../assets/images/portofolio/anagata-executive/anagata-home.webp'
 
 const portfolioItems = [
   { src: img1, name: '3NT Studio',     cat: 'Web' },

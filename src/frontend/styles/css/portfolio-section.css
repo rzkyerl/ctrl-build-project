@@ -54,6 +54,10 @@
   width: max-content;
   gap: 14px;
   padding: 7px 0;
+  /* will-change: transform memberi hint ke browser untuk mempromosikan marquee row
+     ke compositor layer sendiri — animasi translateX berjalan di GPU tanpa memblokir
+     main thread. Aman di sini karena kedua row memang selalu bergerak. */
+  will-change: transform;
 }
 
 .pf-marquee-row--forward  { animation: marquee-left  45s linear infinite; }
@@ -89,13 +93,31 @@
   height: 100%;
   object-fit: cover;
   object-position: top center;
-  filter: grayscale(100%) brightness(0.75);
-  transition: filter 0.6s var(--ease-expo), transform 0.7s var(--ease-expo);
+  /* Hapus filter — mencegah GPU compositor promotion pada marquee row.
+     Efek desaturasi kini ditangani oleh ::before overlay (compositable). */
+  transition: transform 0.7s var(--ease-expo);
 }
 
 .pf-marquee-img:hover img {
-  filter: grayscale(0%) brightness(0.9);
   transform: scale(1.04);
+}
+
+/* Overlay desaturasi — compositable pseudo-element menggantikan CSS filter.
+   mix-blend-mode: color terbatas hanya pada card ini, bukan keseluruhan layer. */
+.pf-marquee-img::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 15, 0.35);
+  /* Saturation overlay: mix luminance dari solid gray ke gambar di bawahnya */
+  mix-blend-mode: color;
+  z-index: 1;
+  transition: opacity 0.6s var(--ease-expo);
+  pointer-events: none;
+}
+
+.pf-marquee-img:hover::before {
+  opacity: 0;
 }
 
 /* Hover overlay with project info */
@@ -110,6 +132,7 @@
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 0.4s var(--ease-expo), transform 0.4s var(--ease-expo);
+  z-index: 2; /* di atas ::before desaturasi overlay */
 }
 
 .pf-marquee-img:hover .pf-img-overlay {

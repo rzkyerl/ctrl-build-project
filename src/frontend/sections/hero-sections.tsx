@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 /* ── Three.js Network Background ────────────────── */
 function ThreeNetwork() {
@@ -196,7 +197,7 @@ function ParticleCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasEl
   )
 }
 
-/* ── 3D Robot (Three.js native) ──────────────────── */
+/* ── 3D Robot (GLB Model) ────────────────────────── */
 function RobotScene() {
   const wrapRef = useRef<HTMLDivElement>(null)
 
@@ -205,8 +206,8 @@ function RobotScene() {
     if (!el) return
     let W = el.offsetWidth, H = el.offsetHeight
 
-    const scene    = new THREE.Scene()
-    const camera   = new THREE.PerspectiveCamera(42, W / H, 0.1, 100)
+    const scene  = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(42, W / H, 0.1, 100)
     camera.position.set(0, 0.4, 6)
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
@@ -215,105 +216,26 @@ function RobotScene() {
     renderer.setClearColor(0x000000, 0)
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.outputColorSpace = THREE.SRGBColorSpace
     el.appendChild(renderer.domElement)
 
-    /* ── Materials ── */
-    const matBody  = new THREE.MeshStandardMaterial({ color: 0xd0d8e8, roughness: 0.2, metalness: 0.9 })
-    const matDark  = new THREE.MeshStandardMaterial({ color: 0x0a0d12, roughness: 0.3, metalness: 0.85 })
-    const matGlow  = new THREE.MeshStandardMaterial({ color: 0x00c8ff, emissive: new THREE.Color(0x0066bb), emissiveIntensity: 1.5, roughness: 0.05, metalness: 0.3 })
-    const matRed   = new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: new THREE.Color(0xaa0000), emissiveIntensity: 1.0 })
-    const matJoint = new THREE.MeshStandardMaterial({ color: 0x222830, roughness: 0.5, metalness: 0.8 })
-    const matAccent= new THREE.MeshStandardMaterial({ color: 0x3a4a5a, roughness: 0.3, metalness: 0.9 })
-
-    const box  = (w: number, h: number, d: number, m: THREE.Material) => new THREE.Mesh(new THREE.BoxGeometry(w,h,d,2,2,2), m)
-    const cyl  = (rt: number, rb: number, h: number, seg: number, m: THREE.Material) => new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg), m)
-    const sph  = (r: number, m: THREE.Material) => new THREE.Mesh(new THREE.SphereGeometry(r,16,12), m)
-
-    const robot = new THREE.Group()
-    robot.position.y = -0.5
-    scene.add(robot)
-
-    /* LEGS */
-    const legL = new THREE.Group(); legL.position.set(-0.26, 0, 0); robot.add(legL)
-    const legR = new THREE.Group(); legR.position.set( 0.26, 0, 0); robot.add(legR)
-    ;[legL, legR].forEach(lg => {
-      const thigh = box(0.28, 0.52, 0.28, matBody); thigh.position.y = 0.3; lg.add(thigh)
-      const kneePad = box(0.32, 0.14, 0.16, matAccent); kneePad.position.y = 0.02; lg.add(kneePad)
-      const shin = box(0.24, 0.5, 0.26, matBody); shin.position.y = -0.26; lg.add(shin)
-      const foot = box(0.26, 0.14, 0.36, matDark); foot.position.set(0, -0.56, 0.05); lg.add(foot)
-    })
-
-    /* HIPS */
-    const hips = box(0.88, 0.28, 0.44, matBody); hips.position.y = 0.62; robot.add(hips)
-    const waist = cyl(0.27, 0.32, 0.2, 12, matJoint); waist.position.y = 0.78; robot.add(waist)
-
-    /* TORSO */
-    const torso = box(0.92, 1.0, 0.5, matBody); torso.position.y = 1.38; robot.add(torso)
-    // chest panel
-    const chestPanel = box(0.58, 0.38, 0.07, matDark); chestPanel.position.set(0, 0.08, 0.3); torso.add(chestPanel)
-    const glowStrip  = box(0.4, 0.08, 0.04, matGlow); glowStrip.position.set(0, 0.08, 0.025); chestPanel.add(glowStrip)
-    // shoulder details
-    ;[-0.52, 0.52].forEach(x => {
-      const shBolt = sph(0.075, matJoint); shBolt.position.set(x, 0.42, 0); torso.add(shBolt)
-      const shPlate = box(0.12, 0.22, 0.14, matAccent); shPlate.position.set(x, 0.3, 0); torso.add(shPlate)
-    })
-    // vent slits
-    for (let i = 0; i < 3; i++) {
-      const vent = box(0.3, 0.03, 0.04, matGlow); vent.position.set(0, -0.28 + i * 0.08, 0.29); torso.add(vent)
-    }
-
-    /* NECK */
-    const neck = cyl(0.13, 0.15, 0.2, 10, matJoint); neck.position.y = 1.93; robot.add(neck)
-
-    /* HEAD */
-    const headGrp = new THREE.Group(); headGrp.position.y = 2.16; robot.add(headGrp)
-    const skull = box(0.7, 0.62, 0.56, matBody); headGrp.add(skull)
-    // visor strip
-    const visor = box(0.56, 0.17, 0.06, matDark); visor.position.set(0, 0.04, 0.31); skull.add(visor)
-    // eyes
-    ;[-0.14, 0.14].forEach(x => {
-      const eye = box(0.11, 0.08, 0.04, matGlow); eye.position.set(x, 0, 0.015); visor.add(eye)
-      // inner bright dot
-      const dot = box(0.05, 0.04, 0.02, new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: new THREE.Color(0xffffff), emissiveIntensity: 2 }))
-      dot.position.set(0, 0, 0.015); eye.add(dot)
-    })
-    // ear panels
-    ;[-0.41, 0.41].forEach(x => {
-      const ear = box(0.08, 0.32, 0.24, matAccent); ear.position.set(x, 0, 0); skull.add(ear)
-    })
-    // antenna
-    const antBase = cyl(0.035, 0.035, 0.14, 8, matJoint); antBase.position.set(0.16, 0.42, 0); skull.add(antBase)
-    const antTip  = sph(0.055, matRed); antTip.position.y = 0.1; antBase.add(antTip)
-    // head top ridge
-    const ridge = box(0.42, 0.06, 0.28, matAccent); ridge.position.set(0, 0.34, 0); skull.add(ridge)
-
-    /* ARMS */
-    const makeArm = (side: -1 | 1) => {
-      const grp = new THREE.Group(); grp.position.set(side * 0.62, 1.55, 0); robot.add(grp)
-      const upper = box(0.27, 0.52, 0.26, matBody); upper.position.y = -0.28; grp.add(upper)
-      const elbow = sph(0.13, matJoint); elbow.position.y = -0.57; grp.add(elbow)
-      const fore = box(0.22, 0.46, 0.22, matBody); fore.position.y = -0.87; grp.add(fore)
-      const wrist = cyl(0.1, 0.11, 0.1, 8, matJoint); wrist.position.y = -1.14; grp.add(wrist)
-      const hand = box(0.22, 0.18, 0.16, matDark); hand.position.y = -1.27; grp.add(hand)
-      // finger nubs
-      for (let i = 0; i < 3; i++) {
-        const fn = box(0.05, 0.1, 0.05, matJoint)
-        fn.position.set(-0.07 + i * 0.07, -0.11, 0.06); hand.add(fn)
-      }
-      return grp
-    }
-    const armL = makeArm(-1)
-    const armR = makeArm(1)
-
     /* ── Lighting ── */
-    scene.add(new THREE.AmbientLight(0x8899bb, 0.4))
+    scene.add(new THREE.AmbientLight(0x8899bb, 0.6))
 
-    const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(3, 6, 4); key.castShadow = true; scene.add(key)
-    const fill = new THREE.DirectionalLight(0x4466ff, 0.8); fill.position.set(-4, 2, 2); scene.add(fill)
-    const rim  = new THREE.DirectionalLight(0xffffff, 1.2); rim.position.set(0, 4, -5); scene.add(rim)
+    const key = new THREE.DirectionalLight(0xffffff, 2.5)
+    key.position.set(3, 6, 4); key.castShadow = true; scene.add(key)
 
-    const eyeGlow = new THREE.PointLight(0x00bbff, 3.0, 2.5); eyeGlow.position.set(0, 2.18, 1.2); scene.add(eyeGlow)
-    const chestGlow = new THREE.PointLight(0x0088ff, 1.8, 2.0); chestGlow.position.set(0, 1.38, 1.0); scene.add(chestGlow)
+    const fill = new THREE.DirectionalLight(0x4466ff, 1.0)
+    fill.position.set(-4, 2, 2); scene.add(fill)
+
+    const rim = new THREE.DirectionalLight(0xffffff, 1.4)
+    rim.position.set(0, 4, -5); scene.add(rim)
+
+    const frontGlow = new THREE.PointLight(0x00bbff, 3.0, 8)
+    frontGlow.position.set(0, 1.5, 3); scene.add(frontGlow)
+
+    const chestGlow = new THREE.PointLight(0x0088ff, 2.0, 5)
+    chestGlow.position.set(0, 1.0, 2); scene.add(chestGlow)
 
     /* ── Mouse ── */
     const mouse = { x: 0, y: 0 }, cur = { x: 0, y: 0 }
@@ -324,37 +246,85 @@ function RobotScene() {
     }
     window.addEventListener('mousemove', onMove, { passive: true })
 
-    /* ── Animate ── */
+    /* ── Load GLB ── */
+    let robot: THREE.Group | null = null
+    let mixer: THREE.AnimationMixer | null = null
     let rafId: number, t = 0
+
+    const loader = new GLTFLoader()
+    loader.load(
+      '/src/assets/3d/ai_robot.glb',
+      (gltf) => {
+        robot = gltf.scene
+
+        // Auto-center & scale the model to fit the viewport
+        const box3 = new THREE.Box3().setFromObject(robot)
+        const size = new THREE.Vector3()
+        const center = new THREE.Vector3()
+        box3.getSize(size); box3.getCenter(center)
+
+        const maxDim = Math.max(size.x, size.y, size.z)
+        const scale = 3.2 / maxDim
+        robot.scale.setScalar(scale)
+        robot.position.sub(center.multiplyScalar(scale))
+        robot.position.y -= 1.0   // downward offset
+
+        // Enable shadows on all meshes and enhance materials
+        robot.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            child.castShadow = true
+            child.receiveShadow = true
+            const mesh = child as THREE.Mesh
+            if (mesh.material) {
+              const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+              mats.forEach((mat) => {
+                if (mat instanceof THREE.MeshStandardMaterial) {
+                  mat.envMapIntensity = 1.2
+                  mat.needsUpdate = true
+                }
+              })
+            }
+          }
+        })
+
+        scene.add(robot)
+
+        // Play animations if the GLB has any
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(robot)
+          gltf.animations.forEach((clip) => {
+            mixer!.clipAction(clip).play()
+          })
+        }
+      },
+      undefined,
+      (err) => console.error('[RobotScene] Failed to load ai_robot.glb:', err)
+    )
+
+    /* ── Animate ── */
+    const clock = new THREE.Clock()
     function animate() {
       rafId = requestAnimationFrame(animate)
       t += 0.016
+      const delta = clock.getDelta()
 
-      // float
-      robot.position.y = -0.5 + Math.sin(t * 0.85) * 0.07
+      if (mixer) mixer.update(delta)
 
-      // body follows mouse slowly
-      cur.x += (mouse.x * 0.18 - cur.x) * 0.04
-      cur.y += (mouse.y * 0.08 - cur.y) * 0.04
-      robot.rotation.y = cur.x
-      robot.rotation.x = cur.y
+      if (robot) {
+        // Float up/down
+        robot.position.y = -1.0 + Math.sin(t * 0.85) * 0.07
 
-      // head tracks mouse more eagerly
-      headGrp.rotation.y = mouse.x * 0.32
-      headGrp.rotation.x = mouse.y * 0.18
+        // Body follows mouse slowly
+        cur.x += (mouse.x * 0.18 - cur.x) * 0.04
+        cur.y += (mouse.y * 0.08 - cur.y) * 0.04
+        robot.rotation.y = cur.x
+        robot.rotation.x = cur.y
+      }
 
-      // arm idle swing
-      armL.rotation.z =  0.15 + Math.sin(t * 0.65) * 0.07
-      armR.rotation.z = -0.15 - Math.sin(t * 0.65) * 0.07
-      armL.rotation.x = Math.sin(t * 0.5) * 0.04
-      armR.rotation.x = Math.sin(t * 0.5 + Math.PI) * 0.04
-
-      // pulse glow
+      // Pulse glow lights
       const pulse = 0.7 + Math.sin(t * 2.8) * 0.3
-      eyeGlow.intensity   = 2.5 * pulse
-      chestGlow.intensity = 1.5 * pulse
-      ;(glowStrip.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.0 * pulse
-      antTip.position.y = 0.1  // keep static
+      frontGlow.intensity = 3.0 * pulse
+      chestGlow.intensity = 2.0 * pulse
 
       renderer.render(scene, camera)
     }

@@ -75,7 +75,7 @@ export const FrameworkSection = () => {
       <div className="fw-header reveal" ref={headerRef}>
         <div className="fw-header-left">
           <span className="section-label">— Tech Stack</span>
-          <h2 className="section-big-title">Teknologi yang<br />kami kuasai</h2>
+          <h2 className="section-big-title">Teknologi atau Framework yang<br />kami pakai</h2>
         </div>
         <div className="fw-counter">
           <span className="fw-counter-num">

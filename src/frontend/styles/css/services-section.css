@@ -48,12 +48,20 @@
   cursor: default;
   position: relative;
   overflow: hidden;
-  transform-style: preserve-3d;
-  will-change: transform;
+  /* transform-style: preserve-3d dihapus — tidak ada 3D transform aktual yang butuh preserve-3d,
+     dan stacking context 3D ini memboroskan compositor resources saat idle */
+  /* will-change dipindahkan ke :hover only — hanya aktif saat animasi benar-benar terjadi */
   transition:
     background 0.5s var(--ease-expo),
     color 0.5s var(--ease-expo),
     padding-left 0.4s var(--ease-expo);
+}
+
+/* Aktifkan will-change hanya saat hover — GPU layer dipromosikan tepat sebelum animasi */
+.svc-row:hover {
+  will-change: transform;
+  padding-left: 2.5rem;
+  color: var(--white);
 }
 
 /* Full-width fill on hover — pseudo element slides in */
@@ -69,11 +77,6 @@
 }
 
 .svc-row:hover::before { transform: scaleX(1); }
-
-.svc-row:hover {
-  padding-left: 2.5rem;
-  color: var(--white);
-}
 
 .svc-row:last-child { border-bottom: 1px solid rgba(0,0,0,0.08); }
 

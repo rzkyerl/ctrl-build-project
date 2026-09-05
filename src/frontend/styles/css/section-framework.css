@@ -85,6 +85,9 @@
   width: max-content;
   gap: 0;
   animation: fw-scroll 50s linear infinite;
+  /* will-change: transform — promosikan ke compositor layer agar animasi
+     translateX berjalan di GPU, terpisah dari main thread scroll. */
+  will-change: transform;
 }
 
 .fw-marquee-row:hover {
@@ -125,13 +128,15 @@
   width: 32px;
   height: 32px;
   object-fit: contain;
-  filter: grayscale(1) contrast(0.8) brightness(0.6);
-  transition: filter 0.4s var(--ease-expo), transform 0.4s var(--ease-expo);
+  /* Hapus filter — gunakan opacity sebagai gantinya (GPU compositable, tidak memblokir layer promotion).
+     Gambar icon dari CDN sudah dalam warna asli; opacity memberi kesan desaturasi yang cukup. */
+  opacity: 0.4;
+  transition: opacity 0.4s var(--ease-expo), transform 0.4s var(--ease-expo);
   display: block;
 }
 
 .fw-icon:hover img {
-  filter: grayscale(0) contrast(1) brightness(1);
+  opacity: 1;
   transform: scale(1.1);
 }
 

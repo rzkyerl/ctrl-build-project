@@ -4,10 +4,10 @@ import '../styles/css/portofolio-more-detail.css'
 // Import project images (reusing existing ones)
 import img3nt from '../../assets/images/portofolio/3nt-studio/3nt-home-mockup-opt.webp'
 import imgBookingin from '../../assets/images/portofolio/bookingin/bookingin-home-mockup-opt.webp'
-import imgEktm from '../../assets/images/portofolio/ektm/HomePages.png'
+import imgEktm from '../../assets/images/portofolio/ektm/HomePages.webp'
 import imgBerbagi from '../../assets/images/portofolio/berbagilagi/berbagi-home-mockup-opt.webp'
 import imgTheDays from '../../assets/images/portofolio/the-days/thedays-home-mockup-opt.webp'
-import imgAnagata from '../../assets/images/portofolio/anagata-executive/anagata-home-mockup.png'
+import imgAnagata from '../../assets/images/portofolio/anagata-executive/anagata-home-mockup.webp'
 
 const projectDetails = {
   '3nt-studio': {

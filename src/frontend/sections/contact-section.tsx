@@ -19,18 +19,42 @@ export const ContactSection = () => {
   }, [])
 
   // Orbiting text SVG rotation
+  // RAF loop di-pause saat section tidak visible (IntersectionObserver)
+  // agar tidak bersaing dengan scroll handler saat off-screen.
   useEffect(() => {
     const svg = orbitRef.current
     if (!svg) return
     let angle = 0
     let rafId: number
+    let isVisible = false
+
     const spin = () => {
+      if (!isVisible) return   // hentikan loop jika tidak visible
       angle += 0.4
       svg.style.transform = `rotate(${angle}deg)`
       rafId = requestAnimationFrame(spin)
     }
+
+    const visObs = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting
+        if (isVisible) rafId = requestAnimationFrame(spin)   // resume
+        // jika tidak visible, loop berhenti sendiri di cek awal spin()
+      },
+      { threshold: 0 }   // trigger begitu 1px section masuk/keluar viewport
+    )
+
+    if (svg.closest('section')) {
+      visObs.observe(svg.closest('section')!)
+    }
+
+    // Mulai spin segera jika section sudah visible saat mount
     rafId = requestAnimationFrame(spin)
-    return () => cancelAnimationFrame(rafId)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      visObs.disconnect()
+    }
   }, [])
 
   return (
@@ -47,7 +71,7 @@ export const ContactSection = () => {
 
           <p className="ct-desc">
             Punya ide atau proyek? Ceritakan kepada kami.<br />
-            Konsultasi pertama selalu <strong>gratis</strong> — tidak ada komitmen.
+            Konsultasi pertama selalu <strong>gratis</strong> tidak ada komitmen.
           </p>
 
           {/* CTA with orbiting text ring */}
@@ -71,7 +95,7 @@ export const ContactSection = () => {
 
             <div className="ct-actions">
               <a
-                href="https://wa.me/6285314012136"
+                href="https://wa.me/6281283481468"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="ct-btn ct-btn--primary"
