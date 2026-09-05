@@ -1,6 +1,9 @@
 import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+// Import file GLB agar Vite memprosesnya dan menghasilkan URL yang benar di production.
+// Tanpa ini, path '/src/assets/3d/ai_robot.glb' hanya valid di dev server.
+import aiRobotUrl from '../../assets/3d/ai_robot.glb?url'
 
 /* ── Three.js Network Background ────────────────── */
 function ThreeNetwork() {
@@ -253,7 +256,7 @@ function RobotScene() {
 
     const loader = new GLTFLoader()
     loader.load(
-      '/src/assets/3d/ai_robot.glb',
+      aiRobotUrl,
       (gltf) => {
         robot = gltf.scene
 
