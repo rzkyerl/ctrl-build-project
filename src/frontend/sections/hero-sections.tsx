@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 // Import file GLB agar Vite memprosesnya dan menghasilkan URL yang benar di production.
 // Tanpa ini, path '/src/assets/3d/ai_robot.glb' hanya valid di dev server.
 import aiRobotUrl from '../../assets/3d/ai_robot.glb?url'
+import { ThreeErrorBoundary } from '../components/ui/ThreeErrorBoundary'
 
 /* ── Three.js Network Background ────────────────── */
 function ThreeNetwork() {
@@ -17,7 +18,20 @@ function ThreeNetwork() {
 
     const scene    = new THREE.Scene()
     const camera   = new THREE.PerspectiveCamera(55, W / H, 0.1, 200)
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
+
+    // WebGL context creation can fail in headless/constrained environments.
+    // Throw so the enclosing ThreeErrorBoundary can catch and suppress the component.
+    let renderer: THREE.WebGLRenderer
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
+    } catch (err) {
+      throw new Error(`[ThreeNetwork] WebGL context creation failed: ${err}`)
+    }
+    if (!renderer.getContext()) {
+      renderer.dispose()
+      throw new Error('[ThreeNetwork] WebGL context is null after creation')
+    }
+
     renderer.setSize(W, H)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setClearColor(0x000000, 0)
@@ -121,6 +135,11 @@ function ParticleCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasEl
     }
 
     function buildParticles() {
+      // Guard against zero-sized canvas to avoid IndexSizeError
+      if (canvas!.offsetWidth===0 || canvas!.offsetHeight===0) {
+        setTimeout(buildParticles, 100)
+        return
+      }
       const OW=W*2, OH=H*2
       const off = document.createElement('canvas'); off.width=OW; off.height=OH
       const oc = off.getContext('2d')!
@@ -213,7 +232,19 @@ function RobotScene() {
     const camera = new THREE.PerspectiveCamera(42, W / H, 0.1, 100)
     camera.position.set(0, 0.4, 6)
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
+    // WebGL context creation can fail in headless/constrained environments.
+    // Throw so the enclosing ThreeErrorBoundary can catch and suppress the component.
+    let renderer: THREE.WebGLRenderer
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
+    } catch (err) {
+      throw new Error(`[RobotScene] WebGL context creation failed: ${err}`)
+    }
+    if (!renderer.getContext()) {
+      renderer.dispose()
+      throw new Error('[RobotScene] WebGL context is null after creation')
+    }
+
     renderer.setSize(W, H)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setClearColor(0x000000, 0)
@@ -385,7 +416,9 @@ export function HeroSection() {
   return (
     <section id="hero" ref={heroRef} className="hero-section">
       {/* Layer 1 – Three.js network */}
-      <ThreeNetwork />
+      <ThreeErrorBoundary>
+        <ThreeNetwork />
+      </ThreeErrorBoundary>
 
       {/* Layer 2 – Particle text (kiri) */}
       <div className="hero-particle-panel" style={{
@@ -399,7 +432,9 @@ export function HeroSection() {
       <div className="hero-robot-panel" style={{
         position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none',
       }}>
-        <RobotScene />
+        <ThreeErrorBoundary>
+          <RobotScene />
+        </ThreeErrorBoundary>
       </div>
 
       {/* SEO h1 */}

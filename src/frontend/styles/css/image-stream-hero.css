@@ -1,0 +1,48 @@
+/* ═══════════════════════════════════════════════════
+   IMAGE STREAM HERO — 3D CSS corridor
+   All sizing is in cqw (% of container width) so the
+   corridor keeps its proportions at any breakpoint.
+═══════════════════════════════════════════════════ */
+
+/* Root wrapper — must establish an inline-size container
+   so cqw units resolve correctly (set via inline style). */
+.ish-root {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Full-bleed scene layer — decorative, pointer-events off */
+.ish-scene {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+/* 3-D world plane */
+.ish-world {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+/* Individual card — positioned & animated entirely via inline styles
+   so multiple instances never conflict. */
+.ish-card {
+  position: absolute;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Image fills the card, no letterboxing */
+.ish-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
