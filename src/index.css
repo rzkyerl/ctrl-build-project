@@ -52,6 +52,15 @@ html { scroll-behavior: auto; }
 
 html, body, #root { min-height: 100%; }
 
+/* Prevent horizontal overflow on all browsers including iOS Safari.
+   iOS Safari scrolls the html element, so overflow-x:hidden on body alone
+   is not sufficient — both must be set. */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   font-family: var(--font-body);
   background: var(--white);
@@ -59,7 +68,6 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
   cursor: none; /* custom cursor takeover */
 }
 
