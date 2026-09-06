@@ -19,8 +19,8 @@ export const ContactSection = () => {
   }, [])
 
   // Orbiting text SVG rotation
-  // RAF loop di-pause saat section tidak visible (IntersectionObserver)
-  // agar tidak bersaing dengan scroll handler saat off-screen.
+  // RAF loop paused when section is not visible (IntersectionObserver)
+  // to avoid competing with scroll handlers while off-screen.
   useEffect(() => {
     const svg = orbitRef.current
     if (!svg) return
@@ -29,7 +29,7 @@ export const ContactSection = () => {
     let isVisible = false
 
     const spin = () => {
-      if (!isVisible) return   // hentikan loop jika tidak visible
+      if (!isVisible) return   // stop loop when not visible
       angle += 0.4
       svg.style.transform = `rotate(${angle}deg)`
       rafId = requestAnimationFrame(spin)
@@ -39,7 +39,7 @@ export const ContactSection = () => {
       ([entry]) => {
         isVisible = entry.isIntersecting
         if (isVisible) rafId = requestAnimationFrame(spin)   // resume
-        // jika tidak visible, loop berhenti sendiri di cek awal spin()
+        // if not visible, loop stops itself at the check in spin()
       },
       { threshold: 0 }   // trigger begitu 1px section masuk/keluar viewport
     )
@@ -48,7 +48,7 @@ export const ContactSection = () => {
       visObs.observe(svg.closest('section')!)
     }
 
-    // Mulai spin segera jika section sudah visible saat mount
+    // Start spinning immediately if section is already visible on mount
     rafId = requestAnimationFrame(spin)
 
     return () => {
@@ -62,16 +62,16 @@ export const ContactSection = () => {
       <div className="ct-block" ref={blockRef}>
 
         <div className="ct-inner">
-          <span className="section-label ct-label">— Hubungi Kami</span>
+          <span className="section-label ct-label">— Contact Us</span>
 
           <h2 className="ct-title" ref={titleRef}>
-            <span className="ct-title-line">Siap untuk</span>
-            <span className="ct-title-line">memulai?</span>
+            <span className="ct-title-line">Ready to</span>
+            <span className="ct-title-line">get started?</span>
           </h2>
 
           <p className="ct-desc">
-            Punya ide atau proyek? Ceritakan kepada kami.<br />
-            Konsultasi pertama selalu <strong>gratis</strong> tidak ada komitmen.
+            Have an idea or a project? Tell us about it.<br />
+            The first consultation is always <strong>free</strong> no commitment.
           </p>
 
           {/* CTA with orbiting text ring */}
@@ -88,7 +88,7 @@ export const ContactSection = () => {
               </defs>
               <text className="ct-orbit-text">
                 <textPath href="#circle-path" startOffset="0%">
-                  START YOUR PROJECT · CTRLBUILD · KONSULTASI GRATIS ·&nbsp;
+                  START YOUR PROJECT · CTRLBUILD · FREE CONSULTATION ·&nbsp;
                 </textPath>
               </text>
             </svg>
@@ -115,7 +115,7 @@ export const ContactSection = () => {
                   <rect x="2" y="4" width="20" height="16" rx="2"/>
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/>
                 </svg>
-                Kirim Email
+                Send Email
               </a>
             </div>
           </div>

@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react'
 import '../styles/css/services-section.css'
 
 const services = [
-  { id: 1, title: 'Web Development', description: 'Situs web profesional: profil perusahaan, e-commerce, dan aplikasi web khusus yang responsif, cepat, dan modern.', tag: 'Development' },
-  { id: 2, title: 'Mobile Apps', description: 'Jasa & Joki pembuatan aplikasi Android / iOS menggunakan Flutter atau React Native untuk tugas akhir maupun bisnis.', tag: 'Mobile' },
-  { id: 3, title: 'UI/UX Design', description: 'Desain antarmuka yang modern dan intuitif. Dari wireframe hingga high-fidelity prototype menggunakan Figma.', tag: 'Design' },
+  { id: 1, title: 'Web Development', description: 'Professional websites: company profiles, e-commerce, and custom web applications — responsive, fast, and modern.', tag: 'Development' },
+  { id: 2, title: 'Mobile Apps', description: 'Android & iOS app development using Flutter or React Native, for final-year projects or business purposes.', tag: 'Mobile' },
+  { id: 3, title: 'UI/UX Design', description: 'Modern and intuitive interface design. From wireframes to high-fidelity prototypes, crafted in Figma.', tag: 'Design' },
 ]
 
 /* Text scramble util */
@@ -53,14 +53,14 @@ export const ServicesSection = () => {
       <div className="svc-container">
         <div className="svc-header reveal">
           <div className="svc-header-left">
-            <span className="section-label">— Layanan</span>
+            <span className="section-label">— Services</span>
             <h2 className="section-big-title">
-              Apa yang<br />
-              <span className="svc-main-title">kami tawarkan</span>
+              What we<br />
+              <span className="svc-main-title">offer</span>
             </h2>
           </div>
           <p className="section-subtitle">
-            Solusi digital lengkap untuk kebutuhan website, aplikasi mobile, dan desain produk dikerjakan secara profesional.
+            Complete digital solutions for websites, mobile applications, and product design delivered professionally.
           </p>
         </div>
 

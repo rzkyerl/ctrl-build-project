@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-// Import file GLB agar Vite memprosesnya dan menghasilkan URL yang benar di production.
-// Tanpa ini, path '/src/assets/3d/ai_robot.glb' hanya valid di dev server.
+// Import the GLB file so Vite processes it and generates the correct URL in production.
+// Without this, the path '/src/assets/3d/ai_robot.glb' is only valid on the dev server.
 import aiRobotUrl from '../../assets/3d/ai_robot.glb?url'
 import { ThreeErrorBoundary } from '../components/ui/ThreeErrorBoundary'
 
@@ -386,7 +386,7 @@ function RobotScene() {
       width: '52%', height: '100%',
       zIndex: 3, overflow: 'hidden', background: 'transparent',
     }}>
-      {/* blend ke kiri */}
+      {/* blend to the left */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 5,
         background: 'linear-gradient(to right, #000 0%, rgba(0,0,0,0.3) 22%, transparent 42%)',
@@ -420,7 +420,7 @@ export function HeroSection() {
         <ThreeNetwork />
       </ThreeErrorBoundary>
 
-      {/* Layer 2 – Particle text (kiri) */}
+      {/* Layer 2 – Particle text (left) */}
       <div className="hero-particle-panel" style={{
         position: 'absolute', left: 0, top: 0,
         width: '55%', height: '100%', zIndex: 2, pointerEvents: 'auto',
@@ -428,7 +428,7 @@ export function HeroSection() {
         <ParticleCanvas canvasRef={canvasRef} />
       </div>
 
-      {/* Layer 3 – Robot 3D (kanan) */}
+      {/* Layer 3 – Robot 3D (right) */}
       <div className="hero-robot-panel" style={{
         position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none',
       }}>
@@ -439,7 +439,7 @@ export function HeroSection() {
 
       {/* SEO h1 */}
       <h1 style={{ position:'absolute', width:1, height:1, overflow:'hidden', opacity:0 }}>
-        CTRLBuild — Jasa Pembuatan Website &amp; Aplikasi Mobile Professional
+        CTRLBuild — Professional Website &amp; Mobile App Development Services
       </h1>
 
       <div className="hero-meta hero-meta--left" aria-hidden="true">Est. 2023</div>
