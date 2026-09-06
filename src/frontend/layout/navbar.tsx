@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import '../../App.css'
+import { ContactModal } from '../components/ui/ContactModal'
 
 const menuItems = [
   { label: 'Home',         href: '/#hero' },
@@ -18,6 +19,7 @@ export function Navbar() {
   const [heroVisible,   setHeroVisible]   = useState(true)
   const [activeSection, setActiveSection] = useState('')
   const [menuOpen,      setMenuOpen]      = useState(false)
+  const [contactModalOpen, setContactModalOpen] = useState(false)
   const location = useLocation()
   const isHomePage = location.pathname === '/'
 
@@ -109,7 +111,7 @@ export function Navbar() {
             })}
           </ul>
 
-          <a href="https://wa.me/6281283481468" className="btn btn-primary nav-cta" id="nav-cta">
+          <a href="#" className="btn btn-primary nav-cta" id="nav-cta" onClick={(e) => { e.preventDefault(); setContactModalOpen(true) }}>
             Free Consultation
           </a>
 
@@ -140,9 +142,7 @@ export function Navbar() {
           </a>
         ))}
         <a
-          href="https://wa.me/6281283481468"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="#"
           className="nav-mobile-link"
           style={{
             marginTop: '2rem',
@@ -152,11 +152,12 @@ export function Navbar() {
             fontFamily: 'var(--font-body)',
             textTransform: 'uppercase',
           }}
-          onClick={() => setMenuOpen(false)}
+          onClick={(e) => { e.preventDefault(); setContactModalOpen(true); setMenuOpen(false) }}
         >
           Free Consultation ↗
         </a>
       </div>
+      <ContactModal isOpen={contactModalOpen} onClose={() => setContactModalOpen(false)} />
     </>
   )
 }
