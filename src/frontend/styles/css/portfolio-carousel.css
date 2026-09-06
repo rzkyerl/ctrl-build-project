@@ -1,0 +1,204 @@
+/* ═══════════════════════════════════════════════════
+   PORTFOLIO CAROUSEL — thumbnail + main viewer
+   Dark theme, matches project variables.
+═══════════════════════════════════════════════════ */
+
+/* ── Root wrapper ── */
+.pc-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ── Main image viewport ── */
+.pc-main-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #111;
+  /* 16:10 aspect for landscape screenshots */
+  aspect-ratio: 16 / 10;
+  cursor: grab;
+  user-select: none;
+}
+
+.pc-main-wrap:active {
+  cursor: grabbing;
+}
+
+/* ── Draggable strip ── */
+.pc-strip {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+/* ── Individual slide ── */
+.pc-slide {
+  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pc-slide-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  pointer-events: none;
+  user-select: none;
+  border-radius: 10px;
+}
+
+/* ── Nav buttons ── */
+.pc-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0.7;
+  transition:
+    opacity   0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.pc-nav:hover:not(.pc-nav--disabled) {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+  background: #fff;
+}
+
+.pc-nav--prev { left: 12px; }
+.pc-nav--next { right: 12px; }
+
+.pc-nav--disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Slide info overlay — bottom-left ── */
+.pc-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2.5rem 1.4rem 1.2rem;
+  /* gradient so text stays readable over any image */
+  background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 0 0 10px 10px;
+  pointer-events: none;
+}
+
+.pc-info-index {
+  font-family: var(--font-body, sans-serif);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.pc-info-title {
+  font-family: var(--font-display, sans-serif);
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.pc-info-cat {
+  font-family: var(--font-body, sans-serif);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 1px;
+}
+
+/* ── Thumbnail scroll container ── */
+.pc-thumbnails-scroll {
+  overflow-x: auto;
+  /* hide scrollbar cross-browser */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.pc-thumbnails-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Thumbnail track ── */
+.pc-thumbnails-track {
+  display: flex;
+  gap: 2px;
+  height: 72px;
+  width: fit-content;
+  padding-bottom: 2px;
+}
+
+/* ── Individual thumbnail button ── */
+.pc-thumb-btn {
+  position: relative;
+  flex-shrink: 0;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 5px;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  background: #222;
+  /* width is driven entirely by motion variants */
+}
+
+.pc-thumb-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .pc-root {
+    gap: 8px;
+  }
+
+  .pc-thumbnails-track {
+    height: 56px;
+  }
+
+  .pc-nav {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pc-info {
+    padding: 2rem 1rem 0.9rem;
+  }
+}

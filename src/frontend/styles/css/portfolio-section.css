@@ -1,80 +1,56 @@
 /* ═══════════════════════════════════════════════════
-   PORTFOLIO SECTION — 3-D image-stream corridor
+   PORTFOLIO SECTION — wraps the thumbnail carousel
 ═══════════════════════════════════════════════════ */
 
-/* Outer section — dark background, no overflow so the corridor
-   can bleed to the edges cleanly. */
 .pf-section {
+  padding: 7rem 0 6rem;
   background: var(--off-black, #0d0d0d);
-  position: relative;
 }
 
-/* ── Corridor container ─────────────────────────────
-   Fixed height gives the 3-D scene a clear canvas.
-   The ImageStreamHero sets containerType:inline-size
-   via its own inline style so cqw resolves correctly. */
-.pf-corridor {
-  width: 100%;
-  height: clamp(420px, 55vw, 680px);
-}
-
-/* ── Foreground overlay ─────────────────────────────
-   Sits above the corridor (z-index via position:relative).
-   Uses a CSS grid to pin content to the four corners. */
-.pf-foreground {
-  position: relative;
-  z-index: 10;
-  height: 100%;
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  grid-template-columns: 1fr 1fr;
-  padding: clamp(1.5rem, 4vw, 3.5rem);
-  pointer-events: none; /* corridor drags through; only interactive children re-enable */
-}
-
-/* ── Header: top-left ───────────────────────────── */
+/* ── Header ── */
 .pf-header {
-  grid-column: 1;
-  grid-row: 1;
+  padding: 0 3rem 3rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  align-self: start;
-}
-
-.pf-label {
-  color: rgba(255, 255, 255, 0.35);
 }
 
 .pf-big-title {
   font-family: var(--font-display);
-  font-size: clamp(2.8rem, 7vw, 7.5rem);
+  font-size: clamp(3rem, 8vw, 8rem);
   font-weight: 700;
   letter-spacing: -0.05em;
   color: var(--white, #fff);
-  line-height: 0.9;
+  line-height: 0.95;
   margin: 0;
-  /* Soft text-shadow so title stays readable over the corridor */
-  text-shadow:
-    0 2px 40px rgba(0, 0, 0, 0.8),
-    0 0  80px rgba(0, 0, 0, 0.5);
 }
 
-/* ── CTA: bottom-right ─────────────────────────── */
-.pf-cta {
-  grid-column: 2;
-  grid-row: 2;
+/* ── Gallery wrap — edge to edge, no padding ── */
+.pf-carousel-wrap {
+  padding: 0;
+  margin: 0 -3rem; /* cancel section padding */
+}
+
+@media (max-width: 1024px) {
+  .pf-carousel-wrap { margin: 0 -2rem; }
+}
+
+@media (max-width: 640px) {
+  .pf-carousel-wrap { margin: 0 -1.5rem; }
+}
+
+/* ── CTA ── */
+.pf-btn-container {
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  pointer-events: auto; /* re-enable so the button is clickable */
+  justify-content: center;
+  margin-top: 3.5rem;
 }
 
 .pf-view-all-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.7rem;
-  padding: 0.9rem 2rem;
+  padding: 1rem 2.2rem;
   font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 700;
@@ -86,40 +62,28 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   transition:
-    background  0.4s var(--ease-expo, ease),
-    color       0.4s var(--ease-expo, ease),
-    transform   0.3s var(--ease-expo, ease),
-    box-shadow  0.4s ease;
+    background 0.4s var(--ease-expo, ease),
+    color      0.4s var(--ease-expo, ease),
+    transform  0.3s var(--ease-expo, ease),
+    box-shadow 0.4s ease;
 }
 
 .pf-view-all-btn:hover {
   background: transparent;
   color: #fff;
   transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px rgba(255, 255, 255, 0.1);
 }
 
-/* ── Responsive ─────────────────────────────────── */
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .pf-carousel-wrap { padding: 0 2rem; }
+  .pf-header        { padding: 0 2rem 2.5rem; }
+}
+
 @media (max-width: 640px) {
-  .pf-corridor {
-    height: clamp(320px, 80vw, 420px);
-  }
-
-  .pf-foreground {
-    grid-template-rows: auto 1fr;
-    padding: 1.5rem;
-    gap: 0;
-  }
-
-  .pf-big-title {
-    font-size: clamp(2.4rem, 13vw, 3.5rem);
-  }
-
-  /* On mobile stack CTA below the title */
-  .pf-cta {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    justify-content: flex-start;
-    padding-top: 1.25rem;
-  }
+  .pf-section       { padding: 4rem 0 4rem; }
+  .pf-header        { padding: 0 1.5rem 2rem; }
+  .pf-carousel-wrap { padding: 0 1rem; }
+  .pf-btn-container { margin-top: 2.5rem; }
 }
