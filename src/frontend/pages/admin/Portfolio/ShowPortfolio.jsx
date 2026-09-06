@@ -163,16 +163,27 @@ export const ShowPortfolio = () => {
                 margin: 0,
               }}>
                 {Array.isArray(portfolio.features) ? (
-                  portfolio.features.map((feature, i) => (
-                    <li key={i} style={{
-                      fontFamily: "'Inter', system-ui, sans-serif",
-                      fontSize: '0.95rem',
-                      color: 'rgba(255,255,255,.8)',
-                      marginBottom: '0.25rem',
-                    }}>
-                      {feature}
-                    </li>
-                  ))
+                  portfolio.features.map((feature, i) => {
+                    // feature can be either a plain string or an object { title, desc }
+                    const isObj = feature && typeof feature === 'object' && !Array.isArray(feature);
+                    return (
+                      <li key={i} style={{
+                        fontFamily: "'Inter', system-ui, sans-serif",
+                        fontSize: '0.95rem',
+                        color: 'rgba(255,255,255,.8)',
+                        marginBottom: '0.25rem',
+                      }}>
+                        {isObj ? (
+                          <span>
+                            <strong>{feature.title}</strong>
+                            {feature.desc ? ` — ${feature.desc}` : ''}
+                          </span>
+                        ) : (
+                          feature
+                        )}
+                      </li>
+                    );
+                  })
                 ) : (
                   <li style={{
                     fontFamily: "'Inter', system-ui, sans-serif",
@@ -205,19 +216,23 @@ export const ShowPortfolio = () => {
             <div style={{ marginBottom: '2rem' }}>
               <p className="admin-stat-label">Tech Stack</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {portfolio.techStack.map((tech, i) => (
-                  <span key={i} style={{
-                    padding: '0.35rem 0.75rem',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '2px',
-                    fontFamily: "'Inter', system-ui, sans-serif",
-                    fontSize: '0.75rem',
-                    color: '#ffffff',
-                  }}>
-                    {tech}
-                  </span>
-                ))}
+                {portfolio.techStack.map((tech, i) => {
+                  // tech is an object { id, name, slug, icon } from the API
+                  const label = (tech && typeof tech === 'object' && tech.name) ? tech.name : tech;
+                  return (
+                    <span key={tech?.id ?? i} style={{
+                      padding: '0.35rem 0.75rem',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '2px',
+                      fontFamily: "'Inter', system-ui, sans-serif",
+                      fontSize: '0.75rem',
+                      color: '#ffffff',
+                    }}>
+                      {label}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           )}
