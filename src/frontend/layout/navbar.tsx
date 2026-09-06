@@ -3,11 +3,11 @@ import { useLocation, Link } from 'react-router-dom'
 import '../../App.css'
 
 const menuItems = [
-  { label: 'Beranda',    href: '/#hero' },
-  { label: 'Layanan',    href: '/#services' },
-  { label: 'Portfolio',  href: '/#portfolio' },
-  { label: 'Cara Kerja', href: '/#workflow' },
-  { label: 'Kontak',     href: '/#contact' },
+  { label: 'Home',         href: '/#hero' },
+  { label: 'Services',     href: '/#services' },
+  { label: 'Portfolio',    href: '/#portfolio' },
+  { label: 'How It Works', href: '/#workflow' },
+  { label: 'Contact',      href: '/#contact' },
 ]
 
 const logoWhite = new URL('../../assets/images/CTRLBuild-White.png', import.meta.url).href
@@ -110,13 +110,13 @@ export function Navbar() {
           </ul>
 
           <a href="https://wa.me/6281283481468" className="btn btn-primary nav-cta" id="nav-cta">
-            Konsultasi Gratis
+            Free Consultation
           </a>
 
           {/* Hamburger */}
           <button
             className={`nav-hamburger ${menuOpen ? 'is-open' : ''}`}
-            aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             onClick={() => setMenuOpen(o => !o)}
           >
             <span />
@@ -154,7 +154,7 @@ export function Navbar() {
           }}
           onClick={() => setMenuOpen(false)}
         >
-          Konsultasi Gratis ↗
+          Free Consultation ↗
         </a>
       </div>
     </>

@@ -3,10 +3,10 @@ import '../styles/css/footer.css'
 const logoWhite = new URL('../../assets/images/CTRLBuild-White-Footer.png', import.meta.url).href
 
 const links = [
-  { label: 'Layanan',    href: '#services' },
+  { label: 'Services',   href: '#services' },
   { label: 'Portfolio',  href: '#portfolio' },
-  { label: 'Cara Kerja', href: '#workflow' },
-  { label: 'Kontak',     href: '#contact' },
+  { label: 'How It Works', href: '#workflow' },
+  { label: 'Contact',    href: '#contact' },
 ]
 
 const socials = [
@@ -26,13 +26,13 @@ export const Footer = () => {
           <div className="ft-brand">
             <img src={logoWhite} alt="CTRLBuild" className="ft-logo" />
             <p className="ft-tagline">
-              Jasa &amp; Joki pembuatan website,<br />mobile apps, dan UI/UX design.
+              Professional website, mobile app,<br />and UI/UX design services.
             </p>
           </div>
 
           {/* Nav */}
           <nav className="ft-nav" aria-label="Footer">
-            <span className="ft-nav-title">Menu</span>
+            <span className="ft-nav-title">Navigation</span>
             {links.map(l => (
               <a key={l.label} href={l.href} className="ft-link">{l.label}</a>
             ))}
@@ -40,7 +40,7 @@ export const Footer = () => {
 
           {/* Socials */}
           <div className="ft-socials">
-            <span className="ft-nav-title">Ikuti Kami</span>
+            <span className="ft-nav-title">Follow Us</span>
             {socials.map(s => (
               <a
                 key={s.label}
@@ -60,8 +60,8 @@ export const Footer = () => {
 
         {/* Bottom row */}
         <div className="ft-bottom">
-          <p className="ft-copy">© {new Date().getFullYear()} CTRLBuild. Semua hak dilindungi.</p>
-          <span className="ft-copy ft-tagline-bottom">PEMBANGUN NEGERI</span>
+          <p className="ft-copy">© {new Date().getFullYear()} CTRLBuild. All rights reserved.</p>
+          <span className="ft-copy ft-tagline-bottom">BUILDERS OF THE NATION</span>
         </div>
 
       </div>

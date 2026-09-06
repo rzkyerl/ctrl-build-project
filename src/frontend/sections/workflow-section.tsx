@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react'
 import '../styles/css/workflow-section.css'
 
 const steps = [
-  { id: 1, title: 'Konsultasi & Requirement', description: 'Diskusi mendalam untuk memahami tujuan, kebutuhan, dan ruang lingkup proyek Anda.' },
-  { id: 2, title: 'UI/UX Design', description: 'Wireframe dan desain visual agar Anda punya gambaran jelas sebelum development dimulai.' },
-  { id: 3, title: 'Development', description: 'Coding dan integrasi menggunakan teknologi terkini, disertai laporan progress rutin.' },
-  { id: 4, title: 'Testing & Launch', description: 'Pengujian menyeluruh, perbaikan bug, dan deployment ke server / platform tujuan.' },
+  { id: 1, title: 'Consultation & Requirements', description: 'An in-depth discussion to understand your goals, needs, and project scope.' },
+  { id: 2, title: 'UI/UX Design', description: 'Wireframes and visual design so you have a clear picture before development begins.' },
+  { id: 3, title: 'Development', description: 'Coding and integration using the latest technologies, with regular progress updates.' },
+  { id: 4, title: 'Testing & Launch', description: 'Thorough testing, bug fixes, and deployment to your target server or platform.' },
 ]
 
 export const WorkflowSection = () => {
@@ -25,18 +25,18 @@ export const WorkflowSection = () => {
 
     /* 3D tilt on each step card
      * Fixes:
-     * 1. getBoundingClientRect() dibaca sekali saat mouseenter (bukan tiap mousemove)
-     *    untuk menghindari forced layout per event.
-     * 2. Style mutation di-batch dalam requestAnimationFrame agar tidak bersaing
-     *    dengan scroll handler di main thread.
-     * 3. card.style.transition hanya di-set saat state berubah (enter/leave),
-     *    bukan setiap frame mousemove.
+     * 1. getBoundingClientRect() is read once on mouseenter (not on every mousemove)
+     *    to avoid forced layout per event.
+     * 2. Style mutations are batched inside requestAnimationFrame so they don't compete
+     *    with scroll handlers on the main thread.
+     * 3. card.style.transition is only set when state changes (enter/leave),
+     *    not on every mousemove frame.
      */
     const cards = section.querySelectorAll<HTMLDivElement>('.wf-step')
     const cleanups: (() => void)[] = []
 
     cards.forEach(card => {
-      // Cache rect saat mouse masuk — tidak perlu re-read setiap mousemove
+      // Cache rect on mouse enter — no need to re-read on every mousemove
       let rect = { left: 0, top: 0, width: 1, height: 1 }
       let pendingRaf: number | null = null
 
@@ -47,7 +47,7 @@ export const WorkflowSection = () => {
       }
 
       const onMove = (e: MouseEvent) => {
-        // Batalkan frame sebelumnya jika belum dieksekusi (throttle otomatis ke 60fps)
+        // Cancel previous frame if not yet executed (auto-throttle to 60fps)
         if (pendingRaf !== null) return
         pendingRaf = requestAnimationFrame(() => {
           pendingRaf = null
@@ -61,7 +61,7 @@ export const WorkflowSection = () => {
         if (pendingRaf !== null) { cancelAnimationFrame(pendingRaf); pendingRaf = null }
         card.style.transition = 'transform .7s cubic-bezier(0.19,1,0.22,1)'
         card.style.transform = ''
-        // Hapus will-change setelah animasi selesai agar layer tidak terus dipromosikan
+        // Remove will-change after animation ends so the layer isn't permanently promoted
         const onTransitionEnd = () => {
           card.style.willChange = ''
           card.removeEventListener('transitionend', onTransitionEnd)
@@ -90,11 +90,11 @@ export const WorkflowSection = () => {
       <div className="wf-container">
         <div className="wf-header reveal">
           <div>
-            <span className="section-label" style={{ color: 'rgba(255,255,255,0.3)' }}>— Cara Kerja</span>
-            <h2 className="section-big-title" style={{ color: '#fff' }}>Proses yang<br />transparan</h2>
+            <span className="section-label" style={{ color: 'rgba(255,255,255,0.3)' }}>— How It Works</span>
+            <h2 className="section-big-title" style={{ color: '#fff' }}>A process that's<br />transparent</h2>
           </div>
           <p className="section-subtitle" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Setiap tahap dikerjakan secara terstruktur dan komunikatif agar Anda selalu up-to-date.
+            Every step is handled in a structured and communicative way so you're always up to date.
           </p>
         </div>
 
