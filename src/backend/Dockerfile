@@ -8,6 +8,7 @@ RUN npm ci
 COPY . .
 RUN npx prisma generate
 RUN npm run build
+RUN ls -la dist/
 
 ENV NODE_ENV=production
 
