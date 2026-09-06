@@ -109,7 +109,7 @@ export function Navbar() {
             })}
           </ul>
 
-          <a href="#contact" className="btn btn-primary nav-cta" id="nav-cta">
+          <a href="https://wa.me/6281283481468" className="btn btn-primary nav-cta" id="nav-cta">
             Konsultasi Gratis
           </a>
 
