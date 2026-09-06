@@ -500,8 +500,14 @@ export function HeroSection() {
           overflow: hidden; height: 38px;
           border-top: 1px solid rgba(255,255,255,.06);
           z-index: 10; display: flex; align-items: center; pointer-events: none;
+          contain: layout style; /* prevent ticker track from triggering body-level overflow */
         }
-        .hero-ticker__track { display: flex; white-space: nowrap; animation: tickerScroll 28s linear infinite; }
+        .hero-ticker__track {
+          display: flex; white-space: nowrap;
+          width: max-content; /* explicit width prevents paint bleed on iOS Safari */
+          will-change: transform;
+          animation: tickerScroll 28s linear infinite;
+        }
         .hero-ticker__track span {
           font-size: .58rem; font-weight: 700; letter-spacing: .18em;
           text-transform: uppercase; color: rgba(255,255,255,.18); padding: 0 1rem;
@@ -514,6 +520,14 @@ export function HeroSection() {
         @media (max-width: 768px) {
           .hero-robot-panel { display: none !important; }
           .hero-particle-panel { width: 100% !important; }
+          /* Prevent tagline from bleeding on very narrow screens */
+          .hero-tagline {
+            white-space: normal;
+            text-align: center;
+            left: 1.5rem;
+            right: 1.5rem;
+            transform: none;
+          }
         }
       `}</style>
     </section>

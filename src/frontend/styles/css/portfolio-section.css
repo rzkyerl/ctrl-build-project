@@ -5,6 +5,7 @@
 .pf-section {
   padding: 7rem 0 6rem;
   background: var(--off-black, #0d0d0d);
+  overflow: hidden; /* contain negative-margin carousel bleed */
 }
 
 /* ── Header ── */
