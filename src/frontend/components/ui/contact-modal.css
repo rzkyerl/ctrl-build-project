@@ -1,0 +1,319 @@
+/* ═══════════════════════════════════════════════════
+   CONTACT MODAL — Monochrome, matches site design system
+   Follows the same pattern as services-section cards:
+   sharp edges, scaleX fill on hover, --ease-expo throughout
+═══════════════════════════════════════════════════ */
+
+/* ── Overlay ── */
+.contact-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: modalFadeIn 0.35s var(--ease-expo);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Modal panel ── */
+.contact-modal {
+  background: var(--off-black, #0a0a0a);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;                         /* sharp — matches site aesthetic */
+  width: 100%;
+  max-width: 440px;
+  padding: 0;                               /* sections handle own padding */
+  position: relative;
+  overflow: hidden;
+  animation: modalSlideIn 0.45s var(--ease-expo);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Close button — square, top-right ── */
+.contact-modal-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0;                         /* sharp */
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: none;
+  transition:
+    background  0.3s var(--ease-expo),
+    border-color 0.3s var(--ease-expo),
+    color       0.3s var(--ease-expo);
+  z-index: 2;
+}
+
+.contact-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--white);
+}
+
+/* ── Header ── */
+.contact-modal-header {
+  padding: 2.5rem 4.5rem 2rem 2.5rem; /* right clearance for the close button */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+}
+
+.contact-modal-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  margin-bottom: 0.75rem;
+}
+
+.contact-modal-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--white);
+  margin: 0 0 0.6rem;
+  line-height: 1.05;
+}
+
+.contact-modal-desc {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.38);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Contact item list ── */
+.contact-modal-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Each item — same signature fill pattern as svc-row */
+.contact-modal-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1.4rem 2.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: none;
+  text-align: left;
+  width: 100%;
+  overflow: hidden;
+  transition:
+    padding-left 0.4s var(--ease-expo),
+    color        0.45s var(--ease-expo);
+}
+
+/* Full-width white fill slides in from left on hover */
+.contact-modal-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--white);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease-expo);
+  z-index: 0;
+}
+
+.contact-modal-item:hover {
+  padding-left: 3.2rem;
+}
+
+.contact-modal-item:hover::before {
+  transform: scaleX(1);
+}
+
+/* All children above the fill */
+.contact-modal-avatar,
+.contact-modal-info,
+.contact-modal-arrow {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Avatar — monochrome square ── */
+.contact-modal-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 0;                         /* sharp — no circle */
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  transition:
+    background   0.45s var(--ease-expo),
+    border-color 0.45s var(--ease-expo),
+    color        0.45s var(--ease-expo);
+}
+
+.contact-modal-item:hover .contact-modal-avatar {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: var(--black);
+}
+
+/* ── Name & role ── */
+.contact-modal-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.contact-modal-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--white);
+  transition: color 0.45s var(--ease-expo);
+}
+
+.contact-modal-item:hover .contact-modal-name {
+  color: var(--black);
+}
+
+.contact-modal-role {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  transition: color 0.45s var(--ease-expo);
+}
+
+.contact-modal-item:hover .contact-modal-role {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* ── Arrow ── */
+.contact-modal-arrow {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.3);
+  transition:
+    color        0.45s var(--ease-expo),
+    border-color 0.45s var(--ease-expo),
+    transform    0.35s var(--ease-expo);
+}
+
+.contact-modal-item:hover .contact-modal-arrow {
+  color: var(--black);
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: rotate(45deg);                 /* matches svc-row arrow rotate */
+}
+
+/* ── Footer ── */
+.contact-modal-footer {
+  padding: 1.75rem 2.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.contact-modal-footer p {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.25);
+  margin: 0;
+}
+
+.contact-modal-email {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 1px;
+  transition:
+    color        0.3s var(--ease-expo),
+    border-color 0.3s var(--ease-expo);
+}
+
+.contact-modal-email:hover {
+  color: var(--white);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .contact-modal-header {
+    padding: 2rem 1.5rem 1.5rem;
+  }
+
+  .contact-modal-item {
+    padding: 1.2rem 1.5rem;
+  }
+
+  .contact-modal-item:hover {
+    padding-left: 2.2rem;
+  }
+
+  .contact-modal-footer {
+    padding: 1.25rem 1.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .contact-modal-avatar {
+    width: 38px;
+    height: 38px;
+  }
+
+  .contact-modal-arrow {
+    width: 30px;
+    height: 30px;
+  }
+}
