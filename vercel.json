@@ -1,0 +1,29 @@
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "dashboard.ctrl-build.my.id"
+        }
+      ],
+      "destination": "/admin/login",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.dashboard.ctrl-build.my.id"
+        }
+      ],
+      "destination": "/admin/login",
+      "permanent": false
+    }
+  ]
+}
