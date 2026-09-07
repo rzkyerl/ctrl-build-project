@@ -1,25 +1,12 @@
 import './App.css'
 import { useEffect, useRef } from 'react'
 import Lenis from '@studio-freight/lenis'
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { Navbar }               from './frontend/layout/navbar'
 import { Footer }               from './frontend/layout/footer'
 import { HomePage }             from './frontend/pages/Home'
 import { PortofolioDetail }     from './frontend/sections/portofolio-detail'
 import { PortofolioMoreDetail } from './frontend/sections/portofolio-more-detail'
-import { Login }                from './frontend/pages/admin/Login'
-import { Dashboard }            from './frontend/pages/admin/Dashboard'
-import { Portfolios }           from './frontend/pages/admin/Portfolio/Portfolios'
-import { CreatePortfolio }      from './frontend/pages/admin/Portfolio/CreatePortfolio'
-import { EditPortfolio }        from './frontend/pages/admin/Portfolio/EditPortfolio'
-import { ShowPortfolio }        from './frontend/pages/admin/Portfolio/ShowPortfolio'
-import { TechStacks }           from './frontend/pages/admin/TechStack/TechStacks'
-import { CreateTechStack }      from './frontend/pages/admin/TechStack/CreateTechStack'
-import { EditTechStack }        from './frontend/pages/admin/TechStack/EditTechStack'
-import { ShowTechStack }        from './frontend/pages/admin/TechStack/ShowTechStack'
-import { AdminLayout }          from './frontend/components/admin/AdminLayout'
-import { ProtectedRoute }       from './frontend/components/admin/ProtectedRoute'
-import { useAuth }              from './frontend/contexts/AuthContext'
 
 /* ── Custom Cursor ───────────────────────────────── */
 function CustomCursor() {
@@ -101,12 +88,9 @@ function MagneticEffect() {
     const STRENGTH  = 0.35
     const RADIUS    = 90
 
-    // Map<HTMLElement, { rect, active }>
-    // rect di-cache saat mouseenter, bukan setiap mousemove
     const btnData = new Map()
     const btnCleanups = []
 
-    // Satu rAF pending untuk semua button — throttle otomatis ke 60fps
     let pendingRaf = null
     let mouseX = 0
     let mouseY = 0
@@ -115,7 +99,7 @@ function MagneticEffect() {
       mouseX = e.clientX
       mouseY = e.clientY
 
-      if (pendingRaf !== null) return   // sudah ada frame yang dijadwalkan
+      if (pendingRaf !== null) return
       pendingRaf = requestAnimationFrame(() => {
         pendingRaf = null
         btnData.forEach(({ rect }, btn) => {
@@ -137,7 +121,6 @@ function MagneticEffect() {
       btn.__magneticBound = true
 
       const onEnter = () => {
-        // Cache rect sekali saat mouse masuk area button
         btnData.set(btn, { rect: btn.getBoundingClientRect() })
         btn.style.transition = 'transform .1s linear'
         btn.style.willChange = 'transform'
@@ -165,7 +148,6 @@ function MagneticEffect() {
       document.querySelectorAll(SELECTORS).forEach(bindBtn)
     }
 
-    // Satu listener global untuk semua button — jauh lebih efisien
     document.addEventListener('mousemove', onMouseMove, { passive: true })
 
     const obs = new MutationObserver(apply)
@@ -188,23 +170,12 @@ function MagneticEffect() {
 ═══════════════════════════════════════════════════ */
 function App() {
   const location = useLocation()
-  const { user } = useAuth()
-  const isAdminRoute = location.pathname.startsWith('/admin')
-
-  // Handle admin page cursor
-  useEffect(() => {
-    if (isAdminRoute) {
-      document.body.style.cursor = 'auto'
-      document.body.dataset.adminPage = 'true'
-    } else {
-      document.body.style.cursor = 'none'
-      delete document.body.dataset.adminPage
-    }
-  }, [isAdminRoute])
 
   useEffect(() => {
-    if (isAdminRoute) return
-    
+    document.body.style.cursor = 'none'
+  }, [])
+
+  useEffect(() => {
     const lenis = new Lenis({
       duration: 1.4,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -217,31 +188,9 @@ function App() {
     const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf) }
     rafId = requestAnimationFrame(raf)
     return () => { cancelAnimationFrame(rafId); lenis.destroy() }
-  }, [isAdminRoute])
+  }, [])
 
   useEffect(() => { window.scrollTo(0, 0) }, [location.pathname])
-
-  if (isAdminRoute) {
-        return (
-          <Routes>
-            <Route path="/admin/login" element={<Login />} />
-            <Route element={<ProtectedRoute />}>
-              <Route element={<AdminLayout />}>
-                <Route path="/admin/dashboard" element={<Dashboard />} />
-                <Route path="/admin/portfolios" element={<Portfolios />} />
-                <Route path="/admin/portfolios/create" element={<CreatePortfolio />} />
-                <Route path="/admin/portfolios/:id" element={<ShowPortfolio />} />
-                <Route path="/admin/portfolios/:id/edit" element={<EditPortfolio />} />
-                <Route path="/admin/tech-stacks" element={<TechStacks />} />
-                <Route path="/admin/tech-stacks/create" element={<CreateTechStack />} />
-                <Route path="/admin/tech-stacks/:id" element={<ShowTechStack />} />
-                <Route path="/admin/tech-stacks/:id/edit" element={<EditTechStack />} />
-                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-              </Route>
-            </Route>
-          </Routes>
-        )
-      }
 
   return (
     <div className="app-shell">
