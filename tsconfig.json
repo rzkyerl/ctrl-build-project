@@ -13,6 +13,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["src/frontend/**/*", "src/App.jsx", "src/main.jsx"],
+  "include": ["src/assets.d.ts", "src/frontend/**/*", "src/App.jsx", "src/main.jsx"],
   "exclude": ["node_modules", "dist", "src/backend"]
 }
