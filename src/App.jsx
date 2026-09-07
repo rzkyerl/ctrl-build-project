@@ -1,12 +1,13 @@
 import './App.css'
 import { useEffect, useRef } from 'react'
 import Lenis from '@studio-freight/lenis'
-import { Routes, Route, useLocation } from 'react-router-dom'
-import { Navbar }               from './frontend/layout/navbar'
-import { Footer }               from './frontend/layout/footer'
-import { HomePage }             from './frontend/pages/Home'
-import { PortofolioDetail }     from './frontend/sections/portofolio-detail'
-import { PortofolioMoreDetail } from './frontend/sections/portofolio-more-detail'
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
+import { Navbar }               from './frontend/user/layout/navbar'
+import { Footer }               from './frontend/user/layout/footer'
+import { HomePage }             from './frontend/user/pages/Home'
+import { PortofolioDetail }     from './frontend/user/sections/portofolio-detail'
+import { PortofolioMoreDetail } from './frontend/user/sections/portofolio-more-detail'
+import { ProtectedRoute }       from './frontend/admin/components/ProtectedRoute'
 
 /* ── Custom Cursor ───────────────────────────────── */
 function CustomCursor() {
@@ -170,12 +171,20 @@ function MagneticEffect() {
 ═══════════════════════════════════════════════════ */
 function App() {
   const location = useLocation()
+  const isAdminRoute = location.pathname.startsWith('/admin')
 
   useEffect(() => {
-    document.body.style.cursor = 'none'
-  }, [])
+    if (isAdminRoute) {
+      document.body.style.cursor = 'auto'
+      document.body.dataset.adminPage = 'true'
+    } else {
+      document.body.style.cursor = 'none'
+      delete document.body.dataset.adminPage
+    }
+  }, [isAdminRoute])
 
   useEffect(() => {
+    if (isAdminRoute) return
     const lenis = new Lenis({
       duration: 1.4,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -188,9 +197,26 @@ function App() {
     const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf) }
     rafId = requestAnimationFrame(raf)
     return () => { cancelAnimationFrame(rafId); lenis.destroy() }
-  }, [])
+  }, [isAdminRoute])
 
   useEffect(() => { window.scrollTo(0, 0) }, [location.pathname])
+
+  if (isAdminRoute) {
+    return (
+      <Routes>
+        {/* Login — public */}
+        <Route path="/admin/login" element={<AdminLoginPlaceholder />} />
+
+        {/* Semua route admin lain — protected */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/admin/dashboard"  element={<AdminPlaceholder title="Dashboard" />} />
+          <Route path="/admin/portfolios" element={<AdminPlaceholder title="Portfolios" />} />
+          <Route path="/admin/stacks"     element={<AdminPlaceholder title="Tech Stacks" />} />
+          <Route path="/admin"            element={<Navigate to="/admin/dashboard" replace />} />
+        </Route>
+      </Routes>
+    )
+  }
 
   return (
     <div className="app-shell">
@@ -204,6 +230,23 @@ function App() {
         <Route path="/projects/:id" element={<PortofolioMoreDetail />} />
       </Routes>
       <Footer />
+    </div>
+  )
+}
+
+/* ── Placeholder pages (akan diganti dengan UI custom) ── */
+function AdminLoginPlaceholder() {
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0a0a', color:'#fff', fontFamily:'sans-serif' }}>
+      <p>Admin Login — coming soon</p>
+    </div>
+  )
+}
+
+function AdminPlaceholder({ title }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0a0a', color:'#fff', fontFamily:'sans-serif' }}>
+      <p>{title} — coming soon</p>
     </div>
   )
 }

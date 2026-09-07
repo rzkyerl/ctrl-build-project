@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 // Import the GLB file so Vite processes it and generates the correct URL in production.
 // Without this, the path '/src/assets/3d/ai_robot.glb' is only valid on the dev server.
-import aiRobotUrl from '../../assets/3d/ai_robot.glb?url'
+import aiRobotUrl from '../../../assets/3d/ai_robot.glb?url'
 import { ThreeErrorBoundary } from '../components/ui/ThreeErrorBoundary'
 
 /* ── Three.js Network Background ────────────────── */
