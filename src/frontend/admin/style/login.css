@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;800&family=Space+Mono&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
   --bg: #050505;
@@ -6,12 +6,14 @@
   --accent: #ffffff;
   --text-dim: rgba(255, 255, 255, 0.5);
   --filter-goo: url('#gooey');
+  --font-login-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-login-body:    'Inter', system-ui, sans-serif;
 }
 
 .mercury-wrapper {
   background-color: var(--bg);
   color: var(--accent);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-login-body);
   height: 100vh;
   width: 100vw;
   overflow: hidden;
@@ -67,7 +69,7 @@
 }
 
 .brand-id {
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-login-display);
   font-size: 10px;
   letter-spacing: 4px;
   text-transform: uppercase;
@@ -97,7 +99,7 @@
 
 .login-form-group label {
   display: block;
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-login-display);
   font-size: 11px;
   color: var(--text-dim);
   margin-bottom: 12px;
@@ -136,7 +138,7 @@
 }
 
 .login-error {
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-login-display);
   font-size: 11px;
   color: #ff6b6b;
   margin-bottom: 20px;
@@ -164,7 +166,7 @@
   position: relative;
   z-index: 2;
   transition: letter-spacing 0.3s, opacity 0.3s;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-login-body);
 }
 
 .login-btn:hover:not(:disabled) {
@@ -198,7 +200,7 @@
   margin-top: 40px;
   display: flex;
   justify-content: space-between;
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-login-display);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.2);
 }

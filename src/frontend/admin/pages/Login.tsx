@@ -100,7 +100,7 @@ const Login: React.FC = () => {
       {/* Login form */}
       <main className="auth-container">
         <header className="login-header">
-          <span className="brand-id">CTRL Build Admin Login</span>
+          <span className="brand-id">CTRL Build </span>
           <h1>ADMIN<br />ACCESS</h1>
         </header>
 

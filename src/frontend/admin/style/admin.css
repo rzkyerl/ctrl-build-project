@@ -1,6 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=Space+Mono&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-/* ── CSS Variables ─────────────────────────────────── */
+/* â”€â”€ CSS Variables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 :root {
   /* Dark mode (default) */
   --ad-bg:           #0a0a0a;
@@ -19,8 +19,9 @@
   --ad-sidebar-w:    220px;
   --ad-topbar-h:     56px;
   --ad-radius:       8px;
-  --ad-font:         'Inter', sans-serif;
-  --ad-mono:         'Space Mono', monospace;
+  --ad-font:         'Inter', system-ui, sans-serif;
+  --ad-font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --ad-mono:         'Space Grotesk', system-ui, sans-serif;
   --ad-transition:   0.2s ease;
 }
 
@@ -37,7 +38,7 @@
   --ad-accent-inv:   #ffffff;
 }
 
-/* ── Reset ─────────────────────────────────────────── */
+/* â”€â”€ Reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .admin-root * {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
@@ -52,7 +53,7 @@
   flex-direction: column;
 }
 
-/* ── Layout ────────────────────────────────────────── */
+/* â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .admin-shell {
   display: flex;
   height: 100vh;
@@ -79,7 +80,7 @@
   background: var(--ad-bg);
 }
 
-/* ── Sidebar ───────────────────────────────────────── */
+/* â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .admin-sidebar {
   position: fixed;
   top: 0;
@@ -119,14 +120,14 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   font-size: 11px;
   font-weight: 700;
   color: var(--ad-accent-inv);
 }
 
 .sidebar-logo-text {
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -233,7 +234,7 @@
   color: var(--ad-text);
 }
 
-/* ── Topbar ────────────────────────────────────────── */
+/* â”€â”€ Topbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .admin-topbar {
   height: var(--ad-topbar-h);
   background: var(--ad-surface);
@@ -296,7 +297,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
@@ -332,7 +333,7 @@
 .topbar-dropdown-email {
   font-size: 11px;
   color: var(--ad-text-dim);
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   word-break: break-all;
 }
 
@@ -360,7 +361,7 @@
   color: var(--ad-danger);
 }
 
-/* ── Page Header ───────────────────────────────────── */
+/* â”€â”€ Page Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-page-header {
   display: flex;
   align-items: center;
@@ -379,10 +380,10 @@
   font-size: 13px;
   color: var(--ad-text-dim);
   margin-top: 2px;
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
 }
 
-/* ── Buttons ───────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-btn {
   display: inline-flex;
   align-items: center;
@@ -442,7 +443,7 @@
   cursor: not-allowed;
 }
 
-/* ── Stat Cards ────────────────────────────────────── */
+/* â”€â”€ Stat Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -458,7 +459,7 @@
 }
 
 .ad-stat-label {
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -473,7 +474,7 @@
   line-height: 1;
 }
 
-/* ── Table ─────────────────────────────────────────── */
+/* â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-table-wrap {
   background: var(--ad-surface);
   border: 1px solid var(--ad-border);
@@ -490,7 +491,7 @@
 .ad-table th {
   text-align: left;
   padding: 10px 16px;
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -529,7 +530,7 @@
   justify-content: flex-end;
 }
 
-/* ── Cards ─────────────────────────────────────────── */
+/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-card {
   background: var(--ad-surface);
   border: 1px solid var(--ad-border);
@@ -549,7 +550,7 @@
   justify-content: flex-end;
 }
 
-/* ── Forms ─────────────────────────────────────────── */
+/* â”€â”€ Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-form {
   display: flex;
   flex-direction: column;
@@ -563,7 +564,7 @@
 }
 
 .ad-label {
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -611,7 +612,7 @@
   color: var(--ad-text-muted);
 }
 
-/* ── Split Layout (form + preview) ─────────────────── */
+/* â”€â”€ Split Layout (form + preview) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -629,7 +630,7 @@
 .ad-split-panel-header {
   padding: 12px 16px;
   border-bottom: 1px solid var(--ad-border);
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -643,7 +644,7 @@
   padding: 20px;
 }
 
-/* ── Feature List ───────────────────────────────────── */
+/* â”€â”€ Feature List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-feature-list {
   display: flex;
   flex-direction: column;
@@ -681,7 +682,7 @@
   color: var(--ad-danger);
 }
 
-/* ── Stack Select (chips) ───────────────────────────── */
+/* â”€â”€ Stack Select (chips) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-stack-select {
   display: flex;
   flex-wrap: wrap;
@@ -720,7 +721,7 @@
   border-radius: 2px;
 }
 
-/* ── Image Upload ───────────────────────────────────── */
+/* â”€â”€ Image Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-upload-zone {
   border: 2px dashed var(--ad-border);
   border-radius: var(--ad-radius);
@@ -755,7 +756,7 @@
   margin-top: 8px;
 }
 
-/* ── Portfolio Grid ─────────────────────────────────── */
+/* â”€â”€ Portfolio Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-portfolio-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -797,7 +798,7 @@
 
 .ad-portfolio-card-meta {
   font-size: 11px;
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   color: var(--ad-text-dim);
   margin-bottom: 12px;
 }
@@ -807,7 +808,7 @@
   gap: 6px;
 }
 
-/* ── Stack Grid ─────────────────────────────────────── */
+/* â”€â”€ Stack Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-stack-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -860,7 +861,7 @@
 
 .ad-stack-card-slug {
   font-size: 10px;
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   color: var(--ad-text-muted);
   margin-bottom: 12px;
   white-space: nowrap;
@@ -874,7 +875,7 @@
   justify-content: center;
 }
 
-/* ── Toolbar (search + filter) ──────────────────────── */
+/* â”€â”€ Toolbar (search + filter) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-toolbar {
   display: flex;
   align-items: center;
@@ -932,14 +933,14 @@
   min-width: 140px;
 }
 
-/* ── Badge ──────────────────────────────────────────── */
+/* â”€â”€ Badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-badge {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
   border-radius: 20px;
   font-size: 10px;
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   letter-spacing: 0.05em;
   font-weight: 600;
   text-transform: uppercase;
@@ -963,7 +964,7 @@
   border: 1px solid rgba(255,210,77,0.2);
 }
 
-/* ── Modal ──────────────────────────────────────────── */
+/* â”€â”€ Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1003,7 +1004,7 @@
   justify-content: flex-end;
 }
 
-/* ── Empty State ────────────────────────────────────── */
+/* â”€â”€ Empty State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-empty {
   text-align: center;
   padding: 60px 20px;
@@ -1021,19 +1022,19 @@
   margin-bottom: 16px;
 }
 
-/* ── Loading ────────────────────────────────────────── */
+/* â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-loading {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 60px;
   color: var(--ad-text-muted);
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   font-size: 12px;
   letter-spacing: 0.1em;
 }
 
-/* ── Error ──────────────────────────────────────────── */
+/* â”€â”€ Error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-error {
   background: rgba(255,77,77,0.08);
   border: 1px solid rgba(255,77,77,0.2);
@@ -1044,7 +1045,7 @@
   margin-bottom: 16px;
 }
 
-/* ── Recent Portfolios ──────────────────────────────── */
+/* â”€â”€ Recent Portfolios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ad-recent-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1089,12 +1090,12 @@
 
 .ad-recent-card-cat {
   font-size: 10px;
-  font-family: var(--ad-mono);
+  font-family: var(--ad-font-display);
   color: var(--ad-text-dim);
   margin-top: 2px;
 }
 
-/* ── Scrollbar ──────────────────────────────────────── */
+/* â”€â”€ Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .admin-content::-webkit-scrollbar {
   width: 4px;
 }
@@ -1108,7 +1109,7 @@
   border-radius: 2px;
 }
 
-/* ── Responsive ─────────────────────────────────────── */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 768px) {
   .ad-split {
     grid-template-columns: 1fr;

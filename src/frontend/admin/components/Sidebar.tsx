@@ -2,10 +2,13 @@ import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, FolderOpen, Layers, LogOut, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../../backend/contexts/AuthContext'
+import logoWhite from '../../../assets/images/CTRLBuild-White.png'
+import logoBlack from '../../../assets/images/CTRLBuild-Black.png'
 
 interface SidebarProps {
   collapsed: boolean
   onToggleCollapse: () => void
+  theme?: 'dark' | 'light'
 }
 
 const navItems = [
