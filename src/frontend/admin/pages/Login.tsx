@@ -100,7 +100,7 @@ const Login: React.FC = () => {
       {/* Login form */}
       <main className="auth-container">
         <header className="login-header">
-          <span className="brand-id">CTRLBuild Admin ΓÇö 0x992</span>
+          <span className="brand-id">CTRLBuild Admin Login</span>
           <h1>ADMIN<br />ACCESS</h1>
         </header>
 
@@ -109,7 +109,7 @@ const Login: React.FC = () => {
             <label>Email</label>
             <input
               type="email"
-              placeholder="admin@ctrlbuild.com"
+              placeholder="Your Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -122,7 +122,7 @@ const Login: React.FC = () => {
             <label>Password</label>
             <input
               type="password"
-              placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -143,7 +143,7 @@ const Login: React.FC = () => {
 
         <footer className="login-footer">
           <span>CTRL+BUILD SYSTEM</span>
-          <span>v2.0.0</span>
+          <span>v0.0.1</span>
         </footer>
       </main>
     </div>
