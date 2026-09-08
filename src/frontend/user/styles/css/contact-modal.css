@@ -1,10 +1,10 @@
-/* ═══════════════════════════════════════════════════
-   CONTACT MODAL — Monochrome, matches site design system
+﻿/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   CONTACT MODAL ΓÇö Monochrome, matches site design system
    Follows the same pattern as services-section cards:
    sharp edges, scaleX fill on hover, --ease-expo throughout
-═══════════════════════════════════════════════════ */
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 
-/* ── Overlay ── */
+/* ΓöÇΓöÇ Overlay ΓöÇΓöÇ */
 .contact-modal-overlay {
   position: fixed;
   inset: 0;
@@ -24,11 +24,11 @@
   to   { opacity: 1; }
 }
 
-/* ── Modal panel ── */
+/* ΓöÇΓöÇ Modal panel ΓöÇΓöÇ */
 .contact-modal {
   background: var(--off-black, #0a0a0a);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0;                         /* sharp — matches site aesthetic */
+  border-radius: 0;                         /* sharp ΓÇö matches site aesthetic */
   width: 100%;
   max-width: 440px;
   padding: 0;                               /* sections handle own padding */
@@ -48,7 +48,7 @@
   }
 }
 
-/* ── Close button — square, top-right ── */
+/* ΓöÇΓöÇ Close button ΓÇö square, top-right ΓöÇΓöÇ */
 .contact-modal-close {
   position: absolute;
   top: 1.5rem;
@@ -76,7 +76,7 @@
   color: var(--white);
 }
 
-/* ── Header ── */
+/* ΓöÇΓöÇ Header ΓöÇΓöÇ */
 .contact-modal-header {
   padding: 2.5rem 4.5rem 2rem 2.5rem; /* right clearance for the close button */
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -112,13 +112,13 @@
   line-height: 1.6;
 }
 
-/* ── Contact item list ── */
+/* ΓöÇΓöÇ Contact item list ΓöÇΓöÇ */
 .contact-modal-list {
   display: flex;
   flex-direction: column;
 }
 
-/* Each item — same signature fill pattern as svc-row */
+/* Each item ΓÇö same signature fill pattern as svc-row */
 .contact-modal-item {
   position: relative;
   display: flex;
@@ -165,11 +165,11 @@
   z-index: 1;
 }
 
-/* ── Avatar — monochrome square ── */
+/* ΓöÇΓöÇ Avatar ΓÇö monochrome square ΓöÇΓöÇ */
 .contact-modal-avatar {
   width: 44px;
   height: 44px;
-  border-radius: 0;                         /* sharp — no circle */
+  border-radius: 0;                         /* sharp ΓÇö no circle */
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
@@ -189,7 +189,7 @@
   color: var(--black);
 }
 
-/* ── Name & role ── */
+/* ΓöÇΓöÇ Name & role ΓöÇΓöÇ */
 .contact-modal-info {
   flex: 1;
   display: flex;
@@ -224,7 +224,7 @@
   color: rgba(0, 0, 0, 0.45);
 }
 
-/* ── Arrow ── */
+/* ΓöÇΓöÇ Arrow ΓöÇΓöÇ */
 .contact-modal-arrow {
   width: 36px;
   height: 36px;
@@ -246,7 +246,7 @@
   transform: rotate(45deg);                 /* matches svc-row arrow rotate */
 }
 
-/* ── Footer ── */
+/* ΓöÇΓöÇ Footer ΓöÇΓöÇ */
 .contact-modal-footer {
   padding: 1.75rem 2.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -286,7 +286,7 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* ── Mobile ── */
+/* ΓöÇΓöÇ Mobile ΓöÇΓöÇ */
 @media (max-width: 480px) {
   .contact-modal-header {
     padding: 2rem 1.5rem 1.5rem;

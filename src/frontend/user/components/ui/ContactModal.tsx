@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+﻿import React, { useEffect } from 'react'
 import '../../styles/css/contact-modal.css'
 
 interface ContactOption {
@@ -63,7 +63,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
         </button>
 
         <div className="contact-modal-header">
-          <span className="contact-modal-label">— Contact Us</span>
+          <span className="contact-modal-label">ΓÇö Contact Us</span>
           <h2 className="contact-modal-title">Choose an Admin</h2>
           <p className="contact-modal-desc">
             Select an admin to start your conversation on WhatsApp

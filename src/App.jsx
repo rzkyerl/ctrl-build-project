@@ -1,4 +1,4 @@
-import './App.css'
+﻿import './App.css'
 import { useEffect, useRef } from 'react'
 import Lenis from '@studio-freight/lenis'
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
@@ -10,7 +10,7 @@ import { PortofolioMoreDetail } from './frontend/user/sections/portofolio-more-d
 import { ProtectedRoute }       from './frontend/admin/components/ProtectedRoute'
 import Login                    from './frontend/admin/pages/Login'
 
-/* ── Custom Cursor ───────────────────────────────── */
+/* Custom Cursor */
 function CustomCursor() {
   const dotRef  = useRef(null)
   const ringRef = useRef(null)
@@ -65,7 +65,7 @@ function CustomCursor() {
   )
 }
 
-/* ── Scroll Progress Bar ─────────────────────────── */
+/* Scroll Progress Bar */
 function ScrollProgress() {
   const barRef = useRef(null)
 
@@ -83,14 +83,14 @@ function ScrollProgress() {
   return <div id="scroll-progress" ref={barRef} aria-hidden="true" />
 }
 
-/* ── Magnetic Buttons ────────────────────────────── */
+/* Magnetic Buttons */
 function MagneticEffect() {
   useEffect(() => {
     const SELECTORS = '.btn-primary, .ct-btn--primary, .pf-view-all-btn, .nav-cta'
     const STRENGTH  = 0.35
     const RADIUS    = 90
 
-    const btnData = new Map()
+    const btnData    = new Map()
     const btnCleanups = []
 
     let pendingRaf = null
@@ -167,9 +167,7 @@ function MagneticEffect() {
   return null
 }
 
-/* ═══════════════════════════════════════════════════
-   App
-═══════════════════════════════════════════════════ */
+/* App */
 function App() {
   const location = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
@@ -205,10 +203,10 @@ function App() {
   if (isAdminRoute) {
     return (
       <Routes>
-        {/* Login — public */}
+        {/* Login - public */}
         <Route path="/admin/login" element={<Login />} />
 
-        {/* Semua route admin lain — protected */}
+        {/* Protected admin routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/admin/dashboard"  element={<AdminPlaceholder title="Dashboard" />} />
           <Route path="/admin/portfolios" element={<AdminPlaceholder title="Portfolios" />} />
@@ -235,11 +233,11 @@ function App() {
   )
 }
 
-/* ── Placeholder pages (akan diganti dengan UI custom) ── */
+/* Placeholder pages - will be replaced with custom UI */
 function AdminPlaceholder({ title }) {
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0a0a', color:'#fff', fontFamily:'sans-serif' }}>
-      <p>{title} — coming soon</p>
+      <p>{title} - coming soon</p>
     </div>
   )
 }

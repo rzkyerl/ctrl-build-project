@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../backend/contexts/AuthContext'
 import '../style/login.css'
@@ -100,7 +100,7 @@ const Login: React.FC = () => {
       {/* Login form */}
       <main className="auth-container">
         <header className="login-header">
-          <span className="brand-id">CTRLBuild Admin — 0x992</span>
+          <span className="brand-id">CTRLBuild Admin ΓÇö 0x992</span>
           <h1>ADMIN<br />ACCESS</h1>
         </header>
 
@@ -122,7 +122,7 @@ const Login: React.FC = () => {
             <label>Password</label>
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

@@ -13,15 +13,15 @@
       "permanent": false
     },
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [{ "type": "host", "value": "dashboard.ctrl-build.my.id" }],
-      "destination": "/admin/:path*",
+      "destination": "/admin/login",
       "permanent": false
     },
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [{ "type": "host", "value": "www.dashboard.ctrl-build.my.id" }],
-      "destination": "/admin/:path*",
+      "destination": "/admin/login",
       "permanent": false
     }
   ],
