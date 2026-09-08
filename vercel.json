@@ -1,4 +1,30 @@
 {
+  "redirects": [
+    {
+      "source": "/admin/:path*",
+      "has": [{ "type": "host", "value": "ctrl-build.my.id" }],
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/admin/:path*",
+      "has": [{ "type": "host", "value": "www.ctrl-build.my.id" }],
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "dashboard.ctrl-build.my.id" }],
+      "destination": "/admin/login",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.dashboard.ctrl-build.my.id" }],
+      "destination": "/admin/login",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

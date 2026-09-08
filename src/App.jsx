@@ -1,4 +1,4 @@
-import './App.css'
+﻿import './App.css'
 import { useEffect, useRef } from 'react'
 import Lenis from '@studio-freight/lenis'
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
@@ -8,8 +8,9 @@ import { HomePage }             from './frontend/user/pages/Home'
 import { PortofolioDetail }     from './frontend/user/sections/portofolio-detail'
 import { PortofolioMoreDetail } from './frontend/user/sections/portofolio-more-detail'
 import { ProtectedRoute }       from './frontend/admin/components/ProtectedRoute'
+import Login                    from './frontend/admin/pages/Login'
 
-/* ── Custom Cursor ───────────────────────────────── */
+/* ΓöÇΓöÇ Custom Cursor ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 function CustomCursor() {
   const dotRef  = useRef(null)
   const ringRef = useRef(null)
@@ -64,7 +65,7 @@ function CustomCursor() {
   )
 }
 
-/* ── Scroll Progress Bar ─────────────────────────── */
+/* ΓöÇΓöÇ Scroll Progress Bar ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 function ScrollProgress() {
   const barRef = useRef(null)
 
@@ -82,7 +83,7 @@ function ScrollProgress() {
   return <div id="scroll-progress" ref={barRef} aria-hidden="true" />
 }
 
-/* ── Magnetic Buttons ────────────────────────────── */
+/* ΓöÇΓöÇ Magnetic Buttons ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 function MagneticEffect() {
   useEffect(() => {
     const SELECTORS = '.btn-primary, .ct-btn--primary, .pf-view-all-btn, .nav-cta'
@@ -166,9 +167,9 @@ function MagneticEffect() {
   return null
 }
 
-/* ═══════════════════════════════════════════════════
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
    App
-═══════════════════════════════════════════════════ */
+ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 function App() {
   const location = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
@@ -204,10 +205,10 @@ function App() {
   if (isAdminRoute) {
     return (
       <Routes>
-        {/* Login — public */}
-        <Route path="/admin/login" element={<AdminLoginPlaceholder />} />
+        {/* Login ΓÇö public */}
+        <Route path="/admin/login" element={<Login />} />
 
-        {/* Semua route admin lain — protected */}
+        {/* Semua route admin lain ΓÇö protected */}
         <Route element={<ProtectedRoute />}>
           <Route path="/admin/dashboard"  element={<AdminPlaceholder title="Dashboard" />} />
           <Route path="/admin/portfolios" element={<AdminPlaceholder title="Portfolios" />} />
@@ -234,19 +235,11 @@ function App() {
   )
 }
 
-/* ── Placeholder pages (akan diganti dengan UI custom) ── */
-function AdminLoginPlaceholder() {
-  return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0a0a', color:'#fff', fontFamily:'sans-serif' }}>
-      <p>Admin Login — coming soon</p>
-    </div>
-  )
-}
-
+/* ΓöÇΓöÇ Placeholder pages (akan diganti dengan UI custom) ΓöÇΓöÇ */
 function AdminPlaceholder({ title }) {
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0a0a', color:'#fff', fontFamily:'sans-serif' }}>
-      <p>{title} — coming soon</p>
+      <p>{title} ΓÇö coming soon</p>
     </div>
   )
 }
