@@ -26,6 +26,9 @@ const StackList       = lazy(() => import('./frontend/admin/pages/stack/index'))
 const StackCreate     = lazy(() => import('./frontend/admin/pages/stack/create'))
 const StackEdit       = lazy(() => import('./frontend/admin/pages/stack/edit'))
 
+// AI Chat page — lazy-loaded
+const AiChatPage = lazy(() => import('./frontend/ai-chat/AiChatPage'))
+
 /* Admin loading fallback */
 function AdminFallback() {
   return (
@@ -186,19 +189,24 @@ function MagneticEffect() {
 function App() {
   const location     = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
+  const isChatRoute  = location.pathname.startsWith('/chat')
+
+  // Routes that use default cursor (no custom cursor / lenis / magnetic)
+  const isAppRoute = isAdminRoute || isChatRoute
 
   useEffect(() => {
-    if (isAdminRoute) {
+    if (isAppRoute) {
       document.body.style.cursor = 'auto'
-      document.body.dataset.adminPage = 'true'
+      if (isAdminRoute) document.body.dataset.adminPage = 'true'
+      else delete document.body.dataset.adminPage
     } else {
       document.body.style.cursor = 'none'
       delete document.body.dataset.adminPage
     }
-  }, [isAdminRoute])
+  }, [isAppRoute, isAdminRoute])
 
   useEffect(() => {
-    if (isAdminRoute) return
+    if (isAppRoute) return
     const lenis = new Lenis({
       duration: 1.4,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -211,9 +219,20 @@ function App() {
     const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf) }
     rafId = requestAnimationFrame(raf)
     return () => { cancelAnimationFrame(rafId); lenis.destroy() }
-  }, [isAdminRoute])
+  }, [isAppRoute])
 
   useEffect(() => { window.scrollTo(0, 0) }, [location.pathname])
+
+  if (isChatRoute) {
+    return (
+      <Suspense fallback={<AdminFallback />}>
+        <Routes>
+          <Route path="/chat"            element={<AiChatPage />} />
+          <Route path="/chat/:sessionId" element={<AiChatPage />} />
+        </Routes>
+      </Suspense>
+    )
+  }
 
   if (isAdminRoute) {
     return (
