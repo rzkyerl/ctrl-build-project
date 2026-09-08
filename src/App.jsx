@@ -2,13 +2,38 @@
 import { useEffect, useRef } from 'react'
 import Lenis from '@studio-freight/lenis'
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
+
+// User
 import { Navbar }               from './frontend/user/layout/navbar'
 import { Footer }               from './frontend/user/layout/footer'
 import { HomePage }             from './frontend/user/pages/Home'
 import { PortofolioDetail }     from './frontend/user/sections/portofolio-detail'
 import { PortofolioMoreDetail } from './frontend/user/sections/portofolio-more-detail'
-import { ProtectedRoute }       from './frontend/admin/components/ProtectedRoute'
-import Login                    from './frontend/admin/pages/Login'
+
+// Admin layout & auth
+import { AdminLayout }    from './frontend/admin/components/AdminLayout'
+import { ProtectedRoute } from './frontend/admin/components/ProtectedRoute'
+import Login              from './frontend/admin/pages/Login'
+
+// Admin pages — lazy-loaded to keep public bundle small
+import { lazy, Suspense } from 'react'
+const Dashboard       = lazy(() => import('./frontend/admin/pages/Dashboard'))
+const PortfolioList   = lazy(() => import('./frontend/admin/pages/portfolio/index'))
+const PortfolioCreate = lazy(() => import('./frontend/admin/pages/portfolio/create'))
+const PortfolioEdit   = lazy(() => import('./frontend/admin/pages/portfolio/edit'))
+const PortfolioDetail = lazy(() => import('./frontend/admin/pages/portfolio/detail'))
+const StackList       = lazy(() => import('./frontend/admin/pages/stack/index'))
+const StackCreate     = lazy(() => import('./frontend/admin/pages/stack/create'))
+const StackEdit       = lazy(() => import('./frontend/admin/pages/stack/edit'))
+
+/* Admin loading fallback */
+function AdminFallback() {
+  return (
+    <div className="ad-loading" style={{ height: '100vh' }}>
+      LOADING...
+    </div>
+  )
+}
 
 /* Custom Cursor */
 function CustomCursor() {
@@ -90,7 +115,7 @@ function MagneticEffect() {
     const STRENGTH  = 0.35
     const RADIUS    = 90
 
-    const btnData    = new Map()
+    const btnData     = new Map()
     const btnCleanups = []
 
     let pendingRaf = null
@@ -100,7 +125,6 @@ function MagneticEffect() {
     const onMouseMove = (e) => {
       mouseX = e.clientX
       mouseY = e.clientY
-
       if (pendingRaf !== null) return
       pendingRaf = requestAnimationFrame(() => {
         pendingRaf = null
@@ -121,7 +145,6 @@ function MagneticEffect() {
     const bindBtn = (btn) => {
       if (btn.__magneticBound) return
       btn.__magneticBound = true
-
       const onEnter = () => {
         btnData.set(btn, { rect: btn.getBoundingClientRect() })
         btn.style.transition = 'transform .1s linear'
@@ -131,13 +154,9 @@ function MagneticEffect() {
         btnData.delete(btn)
         btn.style.transform = ''
         btn.style.transition = 'transform .65s cubic-bezier(0.19,1,0.22,1)'
-        const onEnd = () => {
-          btn.style.willChange = ''
-          btn.removeEventListener('transitionend', onEnd)
-        }
+        const onEnd = () => { btn.style.willChange = ''; btn.removeEventListener('transitionend', onEnd) }
         btn.addEventListener('transitionend', onEnd)
       }
-
       btn.addEventListener('mouseenter', onEnter)
       btn.addEventListener('mouseleave', onLeave)
       btnCleanups.push(() => {
@@ -146,12 +165,8 @@ function MagneticEffect() {
       })
     }
 
-    const apply = () => {
-      document.querySelectorAll(SELECTORS).forEach(bindBtn)
-    }
-
+    const apply = () => document.querySelectorAll(SELECTORS).forEach(bindBtn)
     document.addEventListener('mousemove', onMouseMove, { passive: true })
-
     const obs = new MutationObserver(apply)
     obs.observe(document.body, { childList: true, subtree: true })
     apply()
@@ -169,7 +184,7 @@ function MagneticEffect() {
 
 /* App */
 function App() {
-  const location = useLocation()
+  const location     = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
 
   useEffect(() => {
@@ -202,18 +217,27 @@ function App() {
 
   if (isAdminRoute) {
     return (
-      <Routes>
-        {/* Login - public */}
-        <Route path="/admin/login" element={<Login />} />
+      <Suspense fallback={<AdminFallback />}>
+        <Routes>
+          {/* Public admin route */}
+          <Route path="/admin/login" element={<Login />} />
 
-        {/* Protected admin routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/admin/dashboard"  element={<AdminPlaceholder title="Dashboard" />} />
-          <Route path="/admin/portfolios" element={<AdminPlaceholder title="Portfolios" />} />
-          <Route path="/admin/stacks"     element={<AdminPlaceholder title="Tech Stacks" />} />
-          <Route path="/admin"            element={<Navigate to="/admin/dashboard" replace />} />
-        </Route>
-      </Routes>
+          {/* Protected admin routes — wrapped in AdminLayout */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AdminLayout />}>
+              <Route path="/admin"                          element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/dashboard"                element={<Dashboard />} />
+              <Route path="/admin/portfolios"               element={<PortfolioList />} />
+              <Route path="/admin/portfolios/create"        element={<PortfolioCreate />} />
+              <Route path="/admin/portfolios/:id"           element={<PortfolioDetail />} />
+              <Route path="/admin/portfolios/:id/edit"      element={<PortfolioEdit />} />
+              <Route path="/admin/stacks"                   element={<StackList />} />
+              <Route path="/admin/stacks/create"            element={<StackCreate />} />
+              <Route path="/admin/stacks/:id/edit"          element={<StackEdit />} />
+            </Route>
+          </Route>
+        </Routes>
+      </Suspense>
     )
   }
 
@@ -229,15 +253,6 @@ function App() {
         <Route path="/projects/:id" element={<PortofolioMoreDetail />} />
       </Routes>
       <Footer />
-    </div>
-  )
-}
-
-/* Placeholder pages - will be replaced with custom UI */
-function AdminPlaceholder({ title }) {
-  return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0a0a', color:'#fff', fontFamily:'sans-serif' }}>
-      <p>{title} - coming soon</p>
     </div>
   )
 }

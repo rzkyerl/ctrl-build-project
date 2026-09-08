@@ -100,7 +100,7 @@ const Login: React.FC = () => {
       {/* Login form */}
       <main className="auth-container">
         <header className="login-header">
-          <span className="brand-id">CTRLBuild Admin Login</span>
+          <span className="brand-id">CTRL Build Admin Login</span>
           <h1>ADMIN<br />ACCESS</h1>
         </header>
 
@@ -136,13 +136,13 @@ const Login: React.FC = () => {
           <div className="login-submit-wrap">
             <div className="mercury-drop" />
             <button type="submit" className="login-btn" disabled={loading}>
-              {loading ? 'Authenticating...' : 'Initialize Stream'}
+              {loading ? 'Authenticating...' : 'Login...'}
             </button>
           </div>
         </form>
 
         <footer className="login-footer">
-          <span>CTRL+BUILD SYSTEM</span>
+          <span>CTRL BUILD SYSTEM</span>
           <span>v0.0.1</span>
         </footer>
       </main>
