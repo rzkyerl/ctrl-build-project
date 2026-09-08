@@ -8,6 +8,7 @@ import { HomePage }             from './frontend/user/pages/Home'
 import { PortofolioDetail }     from './frontend/user/sections/portofolio-detail'
 import { PortofolioMoreDetail } from './frontend/user/sections/portofolio-more-detail'
 import { ProtectedRoute }       from './frontend/admin/components/ProtectedRoute'
+import Login                    from './frontend/admin/pages/Login'
 
 /* ── Custom Cursor ───────────────────────────────── */
 function CustomCursor() {
@@ -205,7 +206,7 @@ function App() {
     return (
       <Routes>
         {/* Login — public */}
-        <Route path="/admin/login" element={<AdminLoginPlaceholder />} />
+        <Route path="/admin/login" element={<Login />} />
 
         {/* Semua route admin lain — protected */}
         <Route element={<ProtectedRoute />}>
@@ -235,14 +236,6 @@ function App() {
 }
 
 /* ── Placeholder pages (akan diganti dengan UI custom) ── */
-function AdminLoginPlaceholder() {
-  return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0a0a', color:'#fff', fontFamily:'sans-serif' }}>
-      <p>Admin Login — coming soon</p>
-    </div>
-  )
-}
-
 function AdminPlaceholder({ title }) {
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'#0a0a0a', color:'#fff', fontFamily:'sans-serif' }}>

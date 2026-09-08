@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import './contact-modal.css'
+import '../../styles/css/contact-modal.css'
 
 interface ContactOption {
   name: string
