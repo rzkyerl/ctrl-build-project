@@ -1,0 +1,317 @@
+/* ═══════════════════════════════════════════════════
+   NYX FEATURES
+
+   overflow-x: hidden pada .nyx-root memblokir position:sticky.
+   Solusi: JS scroll listener toggle class is-fixed / is-bottom
+   pada bg-layer, mensimulasikan sticky secara manual.
+
+   State bg-layer:
+   • default          → position: absolute; top: 0  (belum masuk viewport)
+   • .is-fixed        → position: fixed; top: 0     (terkunci di viewport)
+   • .is-bottom       → position: absolute; bottom: 0 (section sudah habis)
+═══════════════════════════════════════════════════ */
+
+/* ── Section ── */
+.nyx-features {
+  position: relative;
+  /* Tinggi = card-layer height + ruang ekstra setelah card habis */
+  /* Tidak di-set manual — ditentukan oleh card-layer + padding-bottom */
+}
+
+/* ══════════════════════════════
+   BACKGROUND LAYER
+══════════════════════════════ */
+.nyx-features-bg-layer {
+  /* Default: absolute di atas section */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Terkunci di viewport saat section mencapai top */
+.nyx-features-bg-layer.is-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+}
+
+/* Section sudah habis scroll — anchor ke bawah section */
+.nyx-features-bg-layer.is-bottom {
+  position: absolute;
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+}
+
+/* Background image */
+.nyx-features-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+/* Dark overlay */
+.nyx-features-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1;
+}
+
+/* "NYX AGENT" — di bg layer, DIAM bersama background */
+.nyx-features-oversized {
+  position: absolute;
+  bottom: 8vh;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  text-align: center;
+  font-family: var(--nyx-font-display);
+  /* Dikecilkan agar tidak bocor dari lebar card (max 1100px) */
+  font-size: clamp(3rem, 8vw, 7.5rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.85;
+  color: #fff;
+  pointer-events: none;
+  /* Batasi lebar sama dengan card */
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Labels */
+.nyx-features-end-labels {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  max-width: var(--nyx-max-w);
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.nyx-features-end-label {
+  font-family: var(--nyx-font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+}
+
+/* ══════════════════════════════
+   CARD LAYER — BERGERAK
+══════════════════════════════ */
+.nyx-features-card-layer {
+  position: relative;
+  z-index: 2;
+  /*
+    Padding top = 100vh → card mulai di bawah bg layer,
+    kemudian scroll ke atas melewati bg yang diam.
+  */
+  padding-top: 100vh;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /*
+    Padding bottom → harus cukup besar agar card bisa scroll
+    benar-benar keluar viewport (card tingginya ~1000-1400px).
+    100vh + extra memastikan card hilang total sebelum section habis.
+  */
+  padding-bottom: 130vh;
+}
+
+/* ── White floating card ── */
+.nyx-features-card {
+  width: 100%;
+  max-width: 1100px;
+  background: #F5F5F3;
+  border-radius: 10px;
+  padding: 5rem 4rem 5rem;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 20px 50px rgba(0, 0, 0, 0.55),
+    0 60px 120px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Card header ── */
+.nyx-features-card-header {
+  margin-bottom: 4rem;
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s var(--nyx-ease-expo),
+    transform 0.8s var(--nyx-ease-expo);
+}
+.nyx-features-card-header.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nyx-features-title {
+  font-family: var(--nyx-font-display);
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  color: #000;
+  margin: 0;
+}
+
+.nyx-features-sub {
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.7;
+  max-width: 480px;
+  margin: 1.4rem 0 0;
+  font-family: var(--nyx-font-body);
+}
+
+/* ── 3×2 grid ── */
+.nyx-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem 2.5rem;
+}
+
+.nyx-feature-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.65s var(--nyx-ease-expo),
+    transform 0.65s var(--nyx-ease-expo);
+}
+.nyx-feature-item.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nyx-feature-item-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+.nyx-feature-item-num {
+  font-family: var(--nyx-font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #ccc;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.nyx-feature-item-name {
+  font-family: var(--nyx-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: #000;
+  margin: 0 0 0.15rem;
+}
+
+.nyx-feature-item-tag {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #999;
+}
+
+.nyx-feature-item-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.nyx-feature-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.1);
+  transition: transform 0.6s var(--nyx-ease-expo), filter 0.6s ease;
+}
+.nyx-feature-item:hover .nyx-feature-item-image img {
+  transform: scale(1.04);
+  filter: grayscale(0.7) contrast(1.15);
+}
+
+.nyx-feature-item-desc {
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: #444;
+  margin: 0;
+  font-family: var(--nyx-font-body);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .nyx-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .nyx-features-card-layer {
+    padding: 100vh 1.2rem 130vh;
+  }
+  .nyx-features-card {
+    padding: 3rem 1.5rem 3.5rem;
+    border-radius: 8px;
+  }
+  .nyx-features-card-header {
+    margin-bottom: 2.5rem;
+  }
+  .nyx-features-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .nyx-features-oversized {
+    font-size: clamp(2rem, 6vw, 5rem);
+    bottom: 10vh;
+  }
+  .nyx-features-end-labels {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nyx-features-card {
+    padding: 2.5rem 1rem 3rem;
+    border-radius: 6px;
+  }
+  .nyx-features-oversized {
+    font-size: clamp(1.8rem, 5vw, 4rem);
+  }
+  .nyx-features-end-labels {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+}

@@ -29,6 +29,9 @@ const StackEdit       = lazy(() => import('./frontend/admin/pages/stack/edit'))
 // AI Chat page — lazy-loaded
 const AiChatPage = lazy(() => import('./frontend/ai-chat/AiChatPage'))
 
+// Nyx Agent SPA — lazy-loaded
+const NyxAgentPage = lazy(() => import('./frontend/nyx-agent/pages/NyxAgentPage'))
+
 /* Admin loading fallback */
 function AdminFallback() {
   return (
@@ -185,14 +188,30 @@ function MagneticEffect() {
   return null
 }
 
+/* Hostname-based subdomain detection for production */
+function getSubdomain() {
+  const hostname = window.location.hostname
+  if (hostname === 'agent.ctrl-build.my.id') return 'nyx-agent'
+  if (hostname === 'chat.ctrl-build.my.id')  return 'chat'
+  if (
+    hostname === 'dashboard.ctrl-build.my.id' ||
+    hostname === 'www.dashboard.ctrl-build.my.id'
+  ) return 'admin'
+  return null
+}
+
 /* App */
 function App() {
   const location     = useLocation()
-  const isAdminRoute = location.pathname.startsWith('/admin')
-  const isChatRoute  = location.pathname.startsWith('/chat')
+  const subdomain    = getSubdomain()
+
+  // Production: subdomain overrides path-based detection
+  const isAdminRoute = subdomain === 'admin'  || (!subdomain && location.pathname.startsWith('/admin'))
+  const isChatRoute  = subdomain === 'chat'   || (!subdomain && location.pathname.startsWith('/nyx-agent/chat'))
+  const isNyxRoute   = subdomain === 'nyx-agent' || (!subdomain && location.pathname.startsWith('/nyx-agent'))
 
   // Routes that use default cursor (no custom cursor / lenis / magnetic)
-  const isAppRoute = isAdminRoute || isChatRoute
+  const isAppRoute = isAdminRoute || isChatRoute || isNyxRoute
 
   useEffect(() => {
     if (isAppRoute) {
@@ -223,12 +242,30 @@ function App() {
 
   useEffect(() => { window.scrollTo(0, 0) }, [location.pathname])
 
+  // Chat route takes priority over nyx-agent (more specific path)
   if (isChatRoute) {
     return (
       <Suspense fallback={<AdminFallback />}>
         <Routes>
-          <Route path="/chat"            element={<AiChatPage />} />
-          <Route path="/chat/:sessionId" element={<AiChatPage />} />
+          {/* Production: chat.ctrl-build.my.id → / */}
+          <Route path="/"                        element={<AiChatPage />} />
+          <Route path="/:sessionId"              element={<AiChatPage />} />
+          {/* Localhost: localhost:5173/nyx-agent/chat */}
+          <Route path="/nyx-agent/chat"          element={<AiChatPage />} />
+          <Route path="/nyx-agent/chat/:sessionId" element={<AiChatPage />} />
+        </Routes>
+      </Suspense>
+    )
+  }
+
+  if (isNyxRoute) {
+    return (
+      <Suspense fallback={<AdminFallback />}>
+        <Routes>
+          {/* Production: agent.ctrl-build.my.id → / */}
+          <Route path="/"          element={<NyxAgentPage />} />
+          {/* Localhost: localhost:5173/nyx-agent */}
+          <Route path="/nyx-agent" element={<NyxAgentPage />} />
         </Routes>
       </Suspense>
     )
@@ -238,12 +275,27 @@ function App() {
     return (
       <Suspense fallback={<AdminFallback />}>
         <Routes>
-          {/* Public admin route */}
+          {/* Production: dashboard.ctrl-build.my.id → /login (root) */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Localhost: localhost:5173/admin/login */}
           <Route path="/admin/login" element={<Login />} />
 
           {/* Protected admin routes — wrapped in AdminLayout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AdminLayout />}>
+              {/* Production root redirects to dashboard */}
+              <Route path="/"                               element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard"                      element={<Dashboard />} />
+              <Route path="/portfolios"                     element={<PortfolioList />} />
+              <Route path="/portfolios/create"              element={<PortfolioCreate />} />
+              <Route path="/portfolios/:id"                 element={<PortfolioDetail />} />
+              <Route path="/portfolios/:id/edit"            element={<PortfolioEdit />} />
+              <Route path="/stacks"                         element={<StackList />} />
+              <Route path="/stacks/create"                  element={<StackCreate />} />
+              <Route path="/stacks/:id/edit"                element={<StackEdit />} />
+
+              {/* Localhost: /admin/* paths */}
               <Route path="/admin"                          element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/dashboard"                element={<Dashboard />} />
               <Route path="/admin/portfolios"               element={<PortfolioList />} />
