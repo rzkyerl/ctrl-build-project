@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import '../styles/css/nyx-hero.css'
 
 /* Landscape asset */
-const landscapeUrl = new URL('../../../assets/images/nyx-agent/nyx agent landscape.webp', import.meta.url).href
+import landscapeUrl from '../../../assets/images/nyx-agent/nyx agent landscape.webp'
 
 /* ── Social icons (inline SVG, monochrome) ── */
 function GithubIcon() {

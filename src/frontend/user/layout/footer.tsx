@@ -1,6 +1,6 @@
 import '../styles/css/footer.css'
 
-const logoWhite = new URL('../../../assets/images/CTRLBuild-White-Footer.png', import.meta.url).href
+import logoWhite from '../../../assets/images/CTRLBuild-White-Footer.png'
 
 const links = [
   { label: 'Services',      href: '#services' },

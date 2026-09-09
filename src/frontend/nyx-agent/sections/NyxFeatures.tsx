@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react'
 import '../styles/css/nyx-features.css'
 
-const img1 = new URL('../../../assets/images/nyx-agent/nyx agent - 6.webp',       import.meta.url).href
-const img2 = new URL('../../../assets/images/nyx-agent/nyx agent - 2.webp',       import.meta.url).href
-const img3 = new URL('../../../assets/images/nyx-agent/nyx agent - 3.webp',       import.meta.url).href
-const img4 = new URL('../../../assets/images/nyx-agent/nyx agent - 4.webp',       import.meta.url).href
-const img5 = new URL('../../../assets/images/nyx-agent/Nyx Agent - 7.webp',       import.meta.url).href
-const img6 = new URL('../../../assets/images/nyx-agent/nyx agent landscape.webp',  import.meta.url).href
-const bgUrl = new URL('../../../assets/images/nyx-agent/nyx agent landscape.webp', import.meta.url).href
+import img1   from '../../../assets/images/nyx-agent/Nyx Agent - 6.webp'
+import img2   from '../../../assets/images/nyx-agent/nyx agent - 2.webp'
+import img3   from '../../../assets/images/nyx-agent/nyx agent - 3.webp'
+import img4   from '../../../assets/images/nyx-agent/nyx agent - 4.webp'
+import img5   from '../../../assets/images/nyx-agent/Nyx Agent - 7.webp'
+import img6   from '../../../assets/images/nyx-agent/nyx agent landscape.webp'
+import bgUrl from '../../../assets/images/nyx-agent/nyx agent landscape.webp'
 
 const items = [
   { num: '01', name: 'Tools',        tag: '15 Built-in',       img: img1, desc: 'Shell, view, read, edit, write, patch, grep, glob, fetch, sourcegraph, think, todo, agent, diagnostics — everything the agent needs to work autonomously.' },
