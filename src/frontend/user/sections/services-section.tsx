@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import '../styles/css/services-section.css'
 
 const services = [
-  { id: 1, title: 'Web Development', description: 'Professional websites: company profiles, e-commerce, and custom web applications — responsive, fast, and modern.', tag: 'Development' },
+  { id: 1, title: 'Web Development', description: 'Professional websites: company profiles, e-commerce, and custom web applications responsive, fast, and modern.', tag: 'Development' },
   { id: 2, title: 'Mobile Apps', description: 'Android & iOS app development using Flutter or React Native, for final-year projects or business purposes.', tag: 'Mobile' },
   { id: 3, title: 'UI/UX Design', description: 'Modern and intuitive interface design. From wireframes to high-fidelity prototypes, crafted in Figma.', tag: 'Design' },
 ]

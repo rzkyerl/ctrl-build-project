@@ -5,8 +5,10 @@ import { ContactModal } from '../components/ui/ContactModal'
 const menuItems = [
   { label: 'Home',         href: '/#hero' },
   { label: 'Services',     href: '/#services' },
+  { label: 'Products',     href: '/#products' },
   { label: 'Portfolio',    href: '/#portfolio' },
   { label: 'How It Works', href: '/#workflow' },
+  { label: 'Testimonials', href: '/#testimonials' },
   { label: 'Contact',      href: '/#contact' },
 ]
 
@@ -23,23 +25,42 @@ export function Navbar() {
   const isHomePage = location.pathname === '/'
 
   useEffect(() => {
+    const sectionIds = menuItems.map(m => m.href.replace('/#', ''))
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
-      if (isHomePage && window.scrollY < 100) setActiveSection('hero')
+
+      // At the very top → highlight hero
+      if (isHomePage && window.scrollY < 100) {
+        setActiveSection('hero')
+        return
+      }
+
+      // Near the bottom of the page → highlight the last section
+      if (isHomePage) {
+        const nearBottom =
+          window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 80
+        if (nearBottom) {
+          setActiveSection(sectionIds[sectionIds.length - 1])
+          return
+        }
+      }
     }
+
     handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
 
+    // Use a looser rootMargin so short / bottom sections still register
     const sectionObs = new IntersectionObserver((entries) => {
       entries.forEach(e => { if (e.isIntersecting) setActiveSection(e.target.id) })
-    }, { rootMargin: '-40% 0px -40% 0px' })
+    }, { rootMargin: '-20% 0px -20% 0px', threshold: 0 })
 
-    menuItems.map(m => m.href.replace('/#', '')).forEach(id => {
+    sectionIds.forEach(id => {
       const el = document.getElementById(id)
       if (el) sectionObs.observe(el)
     })
 
-    let heroObs = null
+    let heroObs: IntersectionObserver | null = null
     const heroEl = document.getElementById('hero')
     if (heroEl) {
       heroObs = new IntersectionObserver(([e]) => setHeroVisible(e.isIntersecting), { threshold: 0.05 })

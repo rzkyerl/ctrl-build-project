@@ -3,10 +3,11 @@ import '../styles/css/footer.css'
 const logoWhite = new URL('../../../assets/images/CTRLBuild-White-Footer.png', import.meta.url).href
 
 const links = [
-  { label: 'Services',   href: '#services' },
-  { label: 'Portfolio',  href: '#portfolio' },
-  { label: 'How It Works', href: '#workflow' },
-  { label: 'Contact',    href: '#contact' },
+  { label: 'Services',      href: '#services' },
+  { label: 'Portfolio',     href: '#portfolio' },
+  { label: 'How It Works',  href: '#workflow' },
+  { label: 'Testimonials',  href: '#testimonials' },
+  { label: 'Contact',       href: '#contact' },
 ]
 
 const socials = [
@@ -61,7 +62,7 @@ export const Footer = () => {
         {/* Bottom row */}
         <div className="ft-bottom">
           <p className="ft-copy">© {new Date().getFullYear()} CTRLBuild. All rights reserved.</p>
-          <span className="ft-copy ft-tagline-bottom">BUILDERS OF THE NATION</span>
+          <span className="ft-copy ft-tagline-bottom">PEMBANGUN NEGERI</span>
         </div>
 
       </div>
