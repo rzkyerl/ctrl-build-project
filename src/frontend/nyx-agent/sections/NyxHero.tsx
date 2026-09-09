@@ -2,6 +2,13 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import '../styles/css/nyx-hero.css'
 
+/* Resolve cross-subdomain URLs — production uses subdomains, localhost uses paths */
+function getChatUrl() {
+  const hostname = window.location.hostname
+  if (hostname === 'agent.ctrl-build.my.id') return 'https://chat.ctrl-build.my.id'
+  return '/nyx-agent/chat'
+}
+
 /* Landscape asset */
 import landscapeUrl from '../../../assets/images/nyx-agent/nyx agent landscape.webp'
 
@@ -110,12 +117,12 @@ export function NyxHero() {
         </div>
 
         {/* RIGHT — CHAT */}
-        <Link
-          to="/chat"
+        <a
+          href={getChatUrl()}
           className="nyx-hero-nav-side nyx-hero-nav-right"
         >
           AGENT CHAT<span className="nyx-hero-nav-arrow"></span>
-        </Link>
+        </a>
       </div>
 
       {/* Content */}
