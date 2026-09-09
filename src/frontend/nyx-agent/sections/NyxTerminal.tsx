@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import '../styles/css/nyx-terminal.css'
 
 /* Left-side image */
-const sideImageUrl = new URL('../../../assets/images/nyx-agent/nyx agent - 1.webp', import.meta.url).href
+import sideImageUrl from '../../../assets/images/nyx-agent/nyx agent - 1.webp'
 
 /* ── Terminal lines data ── */
 interface TermLine {

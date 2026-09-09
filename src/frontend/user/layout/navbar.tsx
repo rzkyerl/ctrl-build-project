@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { ContactModal } from '../components/ui/ContactModal'
+import logoWhite from '../../../assets/images/CTRLBuild-White.png'
+import logoDark  from '../../../assets/images/CTRLBuild-Black.png'
 
 const menuItems = [
   { label: 'Home',         href: '/#hero' },
@@ -11,9 +13,6 @@ const menuItems = [
   { label: 'Testimonials', href: '/#testimonials' },
   { label: 'Contact',      href: '/#contact' },
 ]
-
-const logoWhite = new URL('../../../assets/images/CTRLBuild-White.png', import.meta.url).href
-const logoDark  = new URL('../../../assets/images/CTRLBuild-Black.png', import.meta.url).href
 
 export function Navbar() {
   const [scrolled,      setScrolled]      = useState(false)
