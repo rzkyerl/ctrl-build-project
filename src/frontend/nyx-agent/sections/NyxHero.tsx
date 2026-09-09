@@ -87,7 +87,7 @@ export function NyxHero() {
       <div className="nyx-hero-nav">
         {/* LEFT — CTRL */}
         <Link to="/" className="nyx-hero-nav-side nyx-hero-nav-left">
-          CTRL
+          CTRL BUILD
         </Link>
 
         {/* CENTER — NYX AGENT + socials */}
@@ -114,7 +114,7 @@ export function NyxHero() {
           to="/chat"
           className="nyx-hero-nav-side nyx-hero-nav-right"
         >
-          NYX AGENT CHAT<span className="nyx-hero-nav-arrow">→</span>
+          AGENT CHAT<span className="nyx-hero-nav-arrow"></span>
         </Link>
       </div>
 
