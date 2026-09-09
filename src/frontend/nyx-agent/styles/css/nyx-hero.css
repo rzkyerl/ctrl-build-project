@@ -1,0 +1,417 @@
+/* ═══════════════════════════════════════════════════
+   NYX HERO — Full viewport, landscape bg, serif display
+═══════════════════════════════════════════════════ */
+.nyx-hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 2rem;
+}
+
+/* Background asset */
+.nyx-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* ── Hero nav (3-column: CTRL | NYX AGENT | INSTALL) ── */
+.nyx-hero-nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 2rem 3rem;
+  gap: 2rem;
+}
+
+/* Side links */
+.nyx-hero-nav-side {
+  font-family: var(--nyx-font-serif);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+  color: var(--nyx-text);
+  text-decoration: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 0.2s ease;
+  padding: 0.25rem 0.5rem;
+}
+
+.nyx-hero-nav-side::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 0;
+  height: 1px;
+  background: var(--nyx-text);
+  transition: width 0.25s ease, left 0.25s ease;
+}
+
+.nyx-hero-nav-side:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+.nyx-hero-nav-side:hover {
+  opacity: 0.7;
+}
+
+.nyx-hero-nav-left {
+  justify-self: start;
+}
+
+.nyx-hero-nav-right {
+  justify-self: end;
+}
+
+.nyx-hero-nav-arrow {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-family: var(--nyx-font-mono);
+  font-weight: 400;
+}
+
+.nyx-hero-nav-right:hover .nyx-hero-nav-arrow {
+  transform: translateX(4px);
+}
+
+/* Center block */
+.nyx-hero-nav-center {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  justify-self: center;
+}
+
+.nyx-hero-nav-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05em;
+  font-family: var(--nyx-font-serif);
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+}
+
+.nyx-hero-nav-title-line {
+  font-size: clamp(1.05rem, 1.4vw, 1.35rem);
+  letter-spacing: 0.22em;
+}
+
+/* Socials */
+.nyx-hero-nav-socials {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nyx-hero-nav-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--nyx-text);
+  opacity: 0.75;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.nyx-hero-nav-social:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.nyx-hero-nav-social svg {
+  width: 100%;
+  height: 100%;
+}
+
+.nyx-hero-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.25;
+  filter: grayscale(1) contrast(1.1);
+}
+
+/* Gradient overlay */
+.nyx-hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(10,10,10,0.4) 0%, rgba(10,10,10,0.85) 70%, var(--nyx-bg) 100%);
+}
+
+/* Meta — top corners */
+.nyx-hero-meta {
+  position: absolute;
+  top: calc(var(--nyx-nav-h) + 2rem);
+  z-index: 5;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--nyx-text-mute);
+  pointer-events: none;
+}
+
+.nyx-hero-meta--left  { left: 3rem; }
+.nyx-hero-meta--right { right: 3rem; }
+
+/* Content */
+.nyx-hero-content {
+  position: relative;
+  z-index: 5;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Sub-label above title */
+.nyx-hero-sub-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--nyx-text-mute);
+  padding: 6px 14px;
+  border: 1px solid var(--nyx-border);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.02);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Main title — serif display */
+.nyx-hero-title {
+  font-family: var(--nyx-font-display);
+  font-size: clamp(3.5rem, 14vw, 11rem);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.06em;
+  color: var(--nyx-text);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+/* Animated reveal for title chars */
+.nyx-hero-title .nyx-char {
+  display: inline-block;
+  transform: translateY(110%);
+  opacity: 0;
+  animation: nyxCharReveal 0.8s var(--nyx-ease-expo) forwards;
+}
+
+@keyframes nyxCharReveal {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Subtitle */
+.nyx-hero-subtitle {
+  font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+  font-weight: 400;
+  color: var(--nyx-text-dim);
+  line-height: 1.6;
+  max-width: 520px;
+  margin: 0;
+}
+
+/* CTAs */
+.nyx-hero-ctas {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.nyx-hero-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  border-radius: 8px;
+  font-family: var(--nyx-font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition:
+    background 0.25s var(--nyx-ease-out),
+    color 0.25s var(--nyx-ease-out),
+    border-color 0.25s var(--nyx-ease-out),
+    transform 0.25s var(--nyx-ease-out);
+}
+
+.nyx-hero-btn-primary {
+  background: var(--nyx-accent);
+  color: var(--nyx-accent-inv);
+  border: 1px solid var(--nyx-accent);
+}
+
+.nyx-hero-btn-primary:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
+.nyx-hero-btn-secondary {
+  background: transparent;
+  color: var(--nyx-text);
+  border: 1px solid var(--nyx-border-strong);
+}
+
+.nyx-hero-btn-secondary:hover {
+  border-color: var(--nyx-text);
+  background: rgba(255,255,255,0.05);
+  transform: translateY(-2px);
+}
+
+/* Tagline — below CTAs */
+.nyx-hero-tagline {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--nyx-text-mute);
+  margin-top: 1.5rem;
+  white-space: nowrap;
+}
+
+/* Scroll indicator */
+.nyx-hero-scroll {
+  position: absolute;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.nyx-hero-scroll-label {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--nyx-text-faint);
+}
+
+.nyx-hero-scroll-line {
+  position: relative;
+  width: 1px;
+  height: 52px;
+  background: var(--nyx-border);
+}
+
+.nyx-hero-scroll-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: var(--nyx-text-dim);
+  animation: nyxScrollLine 2.2s ease-in-out infinite;
+}
+
+@keyframes nyxScrollLine {
+  0%   { height: 0%;   top: 0%; }
+  45%  { height: 100%; top: 0%; }
+  100% { height: 0%;   top: 100%; }
+}
+
+/* Ticker — bottom edge */
+.nyx-hero-ticker {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  overflow: hidden;
+  border-top: 1px solid var(--nyx-border);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.nyx-hero-ticker-track {
+  display: flex;
+  white-space: nowrap;
+  width: max-content;
+  will-change: transform;
+  animation: nyxTickerScroll 32s linear infinite;
+}
+
+.nyx-hero-ticker-track span {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--nyx-text-faint);
+  padding: 0 1.2rem;
+}
+
+@keyframes nyxTickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nyx-hero-nav {
+    grid-template-columns: auto 1fr auto;
+    padding: 1.25rem 1.25rem;
+    gap: 1rem;
+  }
+
+  .nyx-hero-nav-title-line {
+    font-size: 0.95rem;
+    letter-spacing: 0.18em;
+  }
+
+  .nyx-hero-nav-side {
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+  }
+
+  .nyx-hero-nav-socials { gap: 0.75rem; }
+  .nyx-hero-nav-social  { width: 18px; height: 18px; }
+
+  .nyx-hero-meta--left  { left: 1.5rem; }
+  .nyx-hero-meta--right { right: 1.5rem; }
+  .nyx-hero-tagline {
+    white-space: normal;
+    text-align: center;
+  }
+  .nyx-hero-ctas {
+    flex-direction: column;
+    width: 100%;
+    max-width: 280px;
+  }
+  .nyx-hero-btn {
+    justify-content: center;
+    width: 100%;
+  }
+}

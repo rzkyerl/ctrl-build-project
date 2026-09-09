@@ -15,17 +15,37 @@
     {
       "source": "/",
       "has": [{ "type": "host", "value": "dashboard.ctrl-build.my.id" }],
-      "destination": "/admin/login",
+      "destination": "/login",
       "permanent": false
     },
     {
       "source": "/",
       "has": [{ "type": "host", "value": "www.dashboard.ctrl-build.my.id" }],
-      "destination": "/admin/login",
+      "destination": "/login",
       "permanent": false
     }
   ],
   "rewrites": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "agent.ctrl-build.my.id" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "chat.ctrl-build.my.id" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "dashboard.ctrl-build.my.id" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.dashboard.ctrl-build.my.id" }],
+      "destination": "/index.html"
+    },
     { "source": "/((?!api).*)", "destination": "/index.html" }
   ]
 }
