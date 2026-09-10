@@ -24,7 +24,11 @@ function useAnchor(open, ref) {
     const update = () => {
       const r = ref.current?.getBoundingClientRect()
       if (!r) return
-      setCoords({ bottom: window.innerHeight - r.top + 8, left: r.left })
+      setCoords({
+        bottom: window.innerHeight - r.top + 8,
+        left:   r.left,
+        right:  window.innerWidth - r.right,
+      })
     }
     update()
     window.addEventListener('resize', update, { passive: true })
@@ -49,12 +53,18 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
   const [files, setFiles]               = useState([])
   const [isDragging, setIsDragging]     = useState(false)
   const [fileError, setFileError]       = useState(null)
-  const [modelMenuOpen, setModelMenuOpen] = useState(false)
-  const [fileMenuOpen, setFileMenuOpen]   = useState(false)
-  const [toolsMenuOpen, setToolsMenuOpen] = useState(false)
-  const [fileAccept, setFileAccept]       = useState(FILE_CONFIG.accept)
-  const [fileMultiple, setFileMultiple]   = useState(true)
-  const [beamActive, setBeamActive]       = useState(false)
+  const [activeMenu, setActiveMenu]     = useState(null) // 'file' | 'model' | 'tools' | null
+  const [fileAccept, setFileAccept]     = useState(FILE_CONFIG.accept)
+  const [fileMultiple, setFileMultiple] = useState(true)
+  const [beamActive, setBeamActive]     = useState(false)
+
+  const modelMenuOpen = activeMenu === 'model'
+  const fileMenuOpen  = activeMenu === 'file'
+  const toolsMenuOpen = activeMenu === 'tools'
+
+  const toggleMenu = useCallback((name) => {
+    setActiveMenu(prev => prev === name ? null : name)
+  }, [])
 
   const selectedModelObj = models.find(m => m.id === selectedModel) || models[0]
 
@@ -81,34 +91,30 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
 
   /* ── Close menus on outside click ── */
   useEffect(() => {
-    if (!modelMenuOpen && !fileMenuOpen && !toolsMenuOpen) return
+    if (!activeMenu) return
     const handler = (e) => {
       const inFile  = fileBtnRef.current?.contains(e.target)  || e.target.closest('.chat-composer-dropdown')
       const inModel = modelBtnRef.current?.contains(e.target) || e.target.closest('.chat-composer-dropdown')
       const inTools = toolsBtnRef.current?.contains(e.target) || e.target.closest('.chat-composer-dropdown')
-      if (!inFile && !inModel && !inTools) {
-        setModelMenuOpen(false)
-        setFileMenuOpen(false)
-        setToolsMenuOpen(false)
-      }
+      if (!inFile && !inModel && !inTools) setActiveMenu(null)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [modelMenuOpen, fileMenuOpen, toolsMenuOpen])
+  }, [activeMenu])
 
   /* ── Close on Escape ── */
   useEffect(() => {
-    if (!modelMenuOpen && !fileMenuOpen && !toolsMenuOpen) return
-    const h = (e) => { if (e.key === 'Escape') { setModelMenuOpen(false); setFileMenuOpen(false); setToolsMenuOpen(false) } }
+    if (!activeMenu) return
+    const h = (e) => { if (e.key === 'Escape') setActiveMenu(null) }
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
-  }, [modelMenuOpen, fileMenuOpen, toolsMenuOpen])
+  }, [activeMenu])
 
   /* ── Open file picker ── */
   const openFilePicker = useCallback((cat) => {
     setFileAccept(cat.accept)
     setFileMultiple(cat.multiple)
-    setFileMenuOpen(false)
+    setActiveMenu(null)
     requestAnimationFrame(() => {
       if (fileInputRef.current) {
         fileInputRef.current.accept   = cat.accept
@@ -195,7 +201,7 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
           <div
             className="chat-composer-box"
             onMouseEnter={() => setBeamActive(true)}
-            onMouseLeave={() => !value && !modelMenuOpen && !fileMenuOpen && !toolsMenuOpen && setBeamActive(false)}
+            onMouseLeave={() => !value && !activeMenu && setBeamActive(false)}
             onFocus={() => setBeamActive(true)}
             onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget) && !value) setBeamActive(false) }}
           >
@@ -218,7 +224,7 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
                 ref={fileBtnRef}
                 className="chat-composer-chip"
                 title="Attach file"
-                onClick={() => { setFileMenuOpen(o => !o); setModelMenuOpen(false) }}
+                onClick={() => toggleMenu('file')}
               >
                 <Paperclip size={16} />
               </button>
@@ -227,7 +233,7 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
               <button
                 ref={modelBtnRef}
                 className="chat-composer-chip has-text"
-                onClick={() => { setModelMenuOpen(o => !o); setFileMenuOpen(false) }}
+                onClick={() => toggleMenu('model')}
                 title="Select model"
               >
                 {selectedModelObj?.label ?? 'Auto'}
@@ -239,7 +245,7 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
                 ref={toolsBtnRef}
                 className="chat-composer-chip has-text"
                 title="Tools"
-                onClick={() => { setToolsMenuOpen(o => !o); setFileMenuOpen(false); setModelMenuOpen(false) }}
+                onClick={() => toggleMenu('tools')}
               >
                 Tools <ChevronDown size={14} className={toolsMenuOpen ? 'chat-chevron-up' : ''} />
               </button>
@@ -282,7 +288,7 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
               <button
                 key={model.id}
                 className={`chat-model-select-item${model.id === selectedModel ? ' active' : ''}`}
-                onClick={() => { onSelectModel?.(model.id); setModelMenuOpen(false) }}
+                onClick={() => { onSelectModel?.(model.id); setActiveMenu(null) }}
               >
                 <div className="chat-model-select-radio">
                   {model.id === selectedModel && <Check size={11} />}
@@ -296,11 +302,16 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
           </div>
         )}
 
-        {/* ── Tools dropdown — fixed, outside BorderBeam clip ── */}
+        {/* ── Tools dropdown — fixed, clamped to viewport ── */}
         {toolsMenuOpen && toolsCoords && (
           <div
             className="chat-composer-dropdown chat-tools-dropdown"
-            style={{ position: 'fixed', bottom: toolsCoords.bottom, left: toolsCoords.left, zIndex: 9999 }}
+            style={{
+              position: 'fixed',
+              bottom: toolsCoords.bottom,
+              left: Math.min(toolsCoords.left, window.innerWidth - 296),
+              zIndex: 9999
+            }}
           >
             <div className="chat-tools-coming-soon">
               <span className="chat-tools-coming-soon-badge">Coming Soon</span>
