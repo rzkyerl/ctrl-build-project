@@ -1,14 +1,24 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
-import { Sparkles, Copy, RefreshCw, Check, User } from 'lucide-react'
+import {
+  Copy,
+  RefreshCw,
+  Check,
+  User,
+  ThumbsUp,
+  ThumbsDown,
+  Share2,
+} from 'lucide-react'
+import agentAvatarUrl from '../../../assets/images/nyx-agent/icon-agent-chat.png'
 import { EmptyState } from './EmptyState'
 import { MarkdownRenderer } from './MarkdownRenderer'
+import { Actions, Action } from './ui/actions'
 import { getFileIcon, formatFileSize } from '../constants'
 
 /* ═══════════════════════════════════════════════════
    ChatArea — Message list with auto-scroll + empty state
 ═══════════════════════════════════════════════════ */
 
-export function ChatArea({ messages, isGenerating, onSuggestionClick, onRegenerate, onCopyMessage }) {
+export function ChatArea({ messages, isGenerating, onSuggestionClick, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
   const scrollRef = useRef(null)
   const bottomRef  = useRef(null)
 
@@ -51,6 +61,9 @@ export function ChatArea({ messages, isGenerating, onSuggestionClick, onRegenera
             isStreaming={isGenerating && i === lastAiMsgIndex}
             onRegenerate={onRegenerate}
             onCopyMessage={onCopyMessage}
+            onLike={onLike}
+            onDislike={onDislike}
+            onShare={onShare}
           />
         ))}
         <div ref={bottomRef} style={{ height: 1 }} />
@@ -92,9 +105,11 @@ function FileAttachments({ files }) {
 }
 
 /* ── Single Message ── */
-function Message({ message, isGenerating, isLastUser, isStreaming = false, onRegenerate, onCopyMessage }) {
+function Message({ message, isGenerating, isLastUser, isStreaming = false, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
   const [copied, setCopied] = useState(false)
   const [showThinking, setShowThinking] = useState(false)
+  // Like/Dislike local state — { value: 'like' | 'dislike' | null }
+  const [feedback, setFeedback] = useState(null)
   const isUser  = message.role === 'user'
   const isAI    = message.role === 'assistant'
   const hasContent = (message.content || '').length > 0
@@ -136,10 +151,57 @@ function Message({ message, isGenerating, isLastUser, isStreaming = false, onReg
     })
   }, [message.content])
 
+  /* ── Toggle feedback (like / dislike) ── */
+  const handleLike = useCallback(() => {
+    const next = feedback === 'like' ? null : 'like'
+    setFeedback(next)
+    onLike?.(message, next)
+  }, [feedback, onLike, message])
+
+  const handleDislike = useCallback(() => {
+    const next = feedback === 'dislike' ? null : 'dislike'
+    setFeedback(next)
+    onDislike?.(message, next)
+  }, [feedback, onDislike, message])
+
+  /* ── Share message ── */
+  const handleShare = useCallback(async () => {
+    const text = message.content || ''
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Shared from Nyx Agent Chat',
+          text: text.slice(0, 500),
+        })
+        onShare?.(message, true)
+      } catch {
+        // User cancelled — don't treat as error
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(text)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        onShare?.(message, true)
+      } catch {
+        onShare?.(message, false)
+      }
+    }
+  }, [message, onShare])
+
   return (
     <div className={`chat-msg ${message.role}`}>
       <div className="chat-msg-avatar">
-        {isUser ? <User size={15} /> : <Sparkles size={14} />}
+        {isUser ? (
+          <User size={15} />
+        ) : (
+          <img
+            src={agentAvatarUrl}
+            alt="Nyx Agent"
+            className="chat-msg-avatar-img"
+          />
+        )}
       </div>
       <div className="chat-msg-body">
         {/* File attachments (shown above text for user, below for AI) */}
@@ -176,27 +238,52 @@ function Message({ message, isGenerating, isLastUser, isStreaming = false, onReg
         {isAI && hasFiles && <FileAttachments files={message.files} />}
 
         {/* Message actions */}
-        {(canCopy || (isLastUser && onRegenerate)) && (
-          <div className="chat-msg-actions">
+        {isAI && hasContent && !isStreaming && (
+          <Actions alwaysVisible={false}>
+            <Action
+              label="Retry"
+              onClick={() => onRegenerate?.(message)}
+              disabled={!onRegenerate}
+            >
+              <RefreshCw size={14} />
+            </Action>
+            <Action
+              label="Like"
+              onClick={handleLike}
+              active={feedback === 'like'}
+            >
+              <ThumbsUp size={14} />
+            </Action>
+            <Action
+              label="Dislike"
+              onClick={handleDislike}
+              active={feedback === 'dislike'}
+            >
+              <ThumbsDown size={14} />
+            </Action>
+            <Action label={copied ? 'Copied!' : 'Copy'} onClick={handleCopy}>
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+            </Action>
+            <Action label="Share" onClick={handleShare}>
+              <Share2 size={14} />
+            </Action>
+          </Actions>
+        )}
+
+        {/* User message actions: Copy + Retry (only on last user msg) */}
+        {isUser && (canCopy || (isLastUser && onRegenerate)) && (
+          <Actions alwaysVisible={false}>
             {canCopy && (
-              <button
-                className="chat-msg-action-btn"
-                onClick={handleCopy}
-                title="Copy message"
-              >
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-              </button>
+              <Action label={copied ? 'Copied!' : 'Copy'} onClick={handleCopy}>
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+              </Action>
             )}
             {isLastUser && onRegenerate && (
-              <button
-                className="chat-msg-action-btn"
-                onClick={() => onRegenerate(message)}
-                title="Regenerate response"
-              >
-                <RefreshCw size={13} />
-              </button>
+              <Action label="Retry" onClick={() => onRegenerate(message)}>
+                <RefreshCw size={14} />
+              </Action>
             )}
-          </div>
+          </Actions>
         )}
       </div>
     </div>

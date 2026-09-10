@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react'
+import logoUrl from '../../../assets/images/nyx-agent/logo-agent-chat.png'
 import { SUGGESTIONS } from '../constants'
 
 /* ═══════════════════════════════════════════════════
@@ -8,10 +8,10 @@ import { SUGGESTIONS } from '../constants'
 export function EmptyState({ onSuggestionClick }) {
   return (
     <div className="chat-empty">
-      <div className="chat-empty-icon">
-        <Sparkles size={24} />
+      <div className="chat-empty-logo">
+        <img src={logoUrl} alt="Nyx Agent" className="chat-empty-logo-img" />
       </div>
-      <h2 className="chat-empty-title">How can I help you?</h2>
+      <h2 className="chat-empty-title">Welcome to Nyx Agent</h2>
       <p className="chat-empty-subtitle">
         Ask anything, upload a file, or start a conversation.
       </p>

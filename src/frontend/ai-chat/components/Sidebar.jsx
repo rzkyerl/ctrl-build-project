@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import { Plus, MessageSquare, Trash2, Settings, X, Sparkles, Edit3 } from 'lucide-react'
+import { Plus, MessageSquare, Trash2, Settings, X, Edit3 } from 'lucide-react'
 import { groupSessionsByDate } from '../constants'
+import agentLogoUrl from '../../../assets/images/nyx-agent/icon-agent-chat.png'
 
 /* ═══════════════════════════════════════════════════
    Sidebar — Conversation list, New Chat, Settings entry
@@ -82,10 +83,8 @@ export function Sidebar({
         {/* Header */}
         <div className="chat-sidebar-header">
           <a href="/chat" className="chat-sidebar-logo" onClick={(e) => { e.preventDefault(); onNewChat() }}>
-            <div className="chat-sidebar-logo-icon">
-              <Sparkles size={14} />
-            </div>
-            CTRL Agent
+            <img src={agentLogoUrl} alt="Nyx Agent" className="chat-sidebar-logo-img" />
+            Nyx Agent
           </a>
           <button className="chat-sidebar-close" onClick={onClose} title="Close sidebar">
             <X size={18} />

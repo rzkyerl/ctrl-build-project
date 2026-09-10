@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   AI Chat API Client — NVIDIA NIM + Groq
+   AI Chat API Client — NVIDIA NIM + Groq + Google Gemini
 ═══════════════════════════════════════════════════
 
    This module handles communication with the AI backend
@@ -7,14 +7,17 @@
    serverless function).
 
    Supported providers:
-   - NVIDIA NIM (integrate.api.nvidia.com)
-   - Groq (api.groq.com) — 100% free, fast LPU inference
+   - NVIDIA NIM     (integrate.api.nvidia.com)               — primary
+   - Groq           (api.groq.com)                           — fast free fallback
+   - Google Gemini  (generativelanguage.googleapis.com)      — last-resort free fallback
 
    In "auto" mode, NIM models are tried first; if all fail,
-   Groq models are tried as fallback.
+   Groq models are tried next, and finally Gemini.
 
-   Groq model IDs are prefixed with "groq/" in the model
-   list so the proxy can route them to the correct endpoint.
+   Model ID prefixes are used by the proxy to route requests:
+     - "groq/<model>"    → Groq
+     - "gemini/<model>"  → Google Gemini
+     - anything else     → NIM
 
    Endpoint: /api/chat (proxy)
    Format:   OpenAI-compatible chat completions (SSE streaming)
@@ -31,10 +34,12 @@ export const AUTO_MODEL_ID = 'auto'
 /**
  * Fallback order used when model === 'auto'.
  * NIM models are tried first; if all fail (429/5xx),
- * Groq models are tried as fallback.
+ * Groq models are tried as fallback, and finally Gemini.
  *
- * Groq model IDs are prefixed with "groq/" so the proxy
- * can route them to the correct API endpoint.
+ * Model ID prefixes route the request to the right provider:
+ *   - "groq/<id>"    → Groq
+ *   - "gemini/<id>"  → Google Gemini
+ *   - anything else  → NIM
  */
 export const AUTO_FALLBACK_ORDER = [
   // --- NIM models (primary) ---
@@ -49,12 +54,22 @@ export const AUTO_FALLBACK_ORDER = [
   'groq/openai/gpt-oss-120b',
   'groq/qwen/qwen3.6-27b',
   'groq/groq/compound-mini',
+  // --- Gemini models (last-resort free fallback) ---
+  'gemini/gemini-2.5-flash',
+  'gemini/gemini-2.5-flash-lite',
+  'gemini/gemini-2.5-pro',
+  'gemini/gemini-flash-latest',
 ]
 
 /**
- * Available AI models (NIM + Groq)
- * NIM models use integrate.api.nvidia.com
- * Groq models are prefixed with "groq/" and use api.groq.com
+ * Available AI models (NIM + Groq + Gemini)
+ *
+ * Routing rules (handled by the proxy based on ID prefix):
+ *   - bare ID or "openai/..."        → NIM   (integrate.api.nvidia.com)
+ *   - "groq/<id>"                    → Groq  (api.groq.com)
+ *   - "gemini/<id>"                  → Google Gemini (generativelanguage.googleapis.com)
+ *
+ * Get a free Gemini API key at: https://aistudio.google.com/apikey
  */
 export const NIM_MODELS = [
   {
@@ -128,17 +143,50 @@ export const NIM_MODELS = [
     description: 'Lightning-fast free model for simple tasks',
     tags:        ['Free', 'Lite'],
   },
+  // --- Gemini models (Google's Generative AI, free tier) ---
+  {
+    id:          'gemini/gemini-2.5-pro',
+    label:       'Pro (Gemini)',
+    vendor:      'Gemini',
+    description: 'Most capable free Gemini model for complex tasks',
+    tags:        ['Free', 'Multimodal', 'Reasoning'],
+  },
+  {
+    id:          'gemini/gemini-2.5-flash',
+    label:       'Fast (Gemini)',
+    vendor:      'Gemini',
+    description: 'Balanced Gemini model — speed and quality',
+    tags:        ['Free', 'Multimodal', 'Fast'],
+  },
+  {
+    id:          'gemini/gemini-flash-latest',
+    label:       'Latest Flash (Gemini)',
+    vendor:      'Gemini',
+    description: 'Latest stable Gemini Flash release',
+    tags:        ['Free', 'Multimodal'],
+  },
+  {
+    id:          'gemini/gemini-2.5-flash-lite',
+    label:       'Lite (Gemini)',
+    vendor:      'Gemini',
+    description: 'Fastest, lowest-cost Gemini model for simple tasks',
+    tags:        ['Free', 'Multimodal', 'Lite'],
+  },
 ]
 
 export const DEFAULT_MODEL = NIM_MODELS[0]
 
 /**
- * Send a chat completion request to NIM with streaming.
+ * Send a chat completion request with streaming.
+ *
+ * Sends to /api/chat which routes to NIM (default),
+ * Groq (model IDs prefixed with "groq/"), or Google
+ * Gemini (model IDs prefixed with "gemini/").
  *
  * @param {Object}   params
- * @param {string}   params.apiKey      — NIM API key
+ * @param {string}   params.apiKey      — unused (kept for API parity)
  * @param {Array}    params.messages    — [{role, content}]
- * @param {string}   params.model       — model ID (default: llama-3.3-70b)
+ * @param {string}   params.model       — model ID (default: 'auto')
  * @param {number}   params.maxTokens   — max output tokens (default: 1024)
  * @param {number}   params.temperature — 0–1 (default: 0.7)
  * @param {AbortSignal} params.signal   — for cancellation

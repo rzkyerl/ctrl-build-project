@@ -311,7 +311,6 @@
     font-size: clamp(1.8rem, 5vw, 4rem);
   }
   .nyx-features-end-labels {
-    flex-direction: column;
     gap: 0.4rem;
   }
 }
