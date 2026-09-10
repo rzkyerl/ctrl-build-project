@@ -6,7 +6,7 @@ import img2   from '../../../assets/images/nyx-agent/nyx agent - 2.webp'
 import img3   from '../../../assets/images/nyx-agent/nyx agent - 3.webp'
 import img4   from '../../../assets/images/nyx-agent/nyx agent - 4.webp'
 import img5   from '../../../assets/images/nyx-agent/Nyx Agent - 7.webp'
-import img6   from '../../../assets/images/nyx-agent/nyx agent - 8.webp'
+import img6   from '../../../assets/images/nyx-agent/Nyx Agent - 8.webp'
 import bgUrl from '../../../assets/images/nyx-agent/nyx agent landscape.webp'
 
 const items = [
