@@ -316,38 +316,19 @@ export default function AiChatPage() {
       <div className="chat-main">
         {/* Header */}
         <header className="chat-header">
+          {/* Left — sidebar toggle */}
           <button
-            className="chat-header-toggle"
+            className="chat-header-icon-btn"
             onClick={() => setSidebarOpen(o => !o)}
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
           >
             <Menu size={18} />
           </button>
 
-          <div className="chat-header-title">
-            {renaming ? (
-              <input
-                ref={renameInputRef}
-                className="chat-header-rename-input"
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                onKeyDown={handleRenameKeyDown}
-                onBlur={commitHeaderRename}
-              />
-            ) : (
-              <span
-                onDoubleClick={startHeaderRename}
-                title="Double-click to rename"
-              >
-                {activeSession?.title || 'New Chat'}
-              </span>
-            )}
-          </div>
-
-          {/* Conversation menu */}
+          {/* Right — More options */}
           <div className="chat-conv-menu-wrap" ref={convMenuRef}>
             <button
-              className="chat-header-menu"
+              className="chat-header-icon-btn"
               title="More options"
               onClick={() => {
                 setConvMenuOpen(o => !o)
