@@ -305,12 +305,19 @@ export default async function handler(req, res) {
       ? `${request.url}&key=${encodeURIComponent(request.apiKey)}`
       : request.url
 
+    // AbortController with 6-second timeout — if the provider doesn't
+    // respond in time, skip to the next model in the fallback chain.
+    const controller = new AbortController()
+    const timeoutId  = setTimeout(() => controller.abort(), 6000)
+
     try {
       const apiResponse = await fetch(finalUrl, {
         method:  'POST',
         headers: request.headers,
         body:    JSON.stringify(request.body),
+        signal:  controller.signal,
       })
+      clearTimeout(timeoutId)
 
       // Rate-limited or server error — try next model
       if (apiResponse.status === 429 || apiResponse.status >= 500) {
@@ -346,8 +353,23 @@ export default async function handler(req, res) {
         const reader  = apiResponse.body.getReader()
         const decoder = new TextDecoder()
 
+        // Per-chunk timeout: if no data arrives within 6 seconds after
+        // the previous chunk, abort the stream and try the next model.
+        const STREAM_TIMEOUT_MS = 6000
+
         while (true) {
-          const { done, value } = await reader.read()
+          const streamTimer = setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS)
+
+          let chunk
+          try {
+            chunk = await reader.read()
+          } catch (readError) {
+            clearTimeout(streamTimer)
+            throw readError
+          }
+          clearTimeout(streamTimer)
+
+          const { done, value } = chunk
           if (done) break
           res.write(decoder.decode(value, { stream: true }))
         }
@@ -358,6 +380,23 @@ export default async function handler(req, res) {
       }
       return // response sent, stop
     } catch (error) {
+      clearTimeout(timeoutId)
+
+      if (error.name === 'AbortError') {
+        // Timeout — skip to next model
+        console.warn(`[${provider}] ${tryModel} timed out after 6s`)
+        // If we already started streaming, we can't fall back — the
+        // client has received partial data. Just end the response.
+        if (res.headersSent) {
+          res.end()
+          return
+        }
+        if (!isLast) continue
+        return res.status(504).json({
+          error: 'All models timed out. Please try again in a moment.',
+        })
+      }
+
       console.error(`[${provider}] ${tryModel} fetch error:`, error.message)
       if (!isLast) continue
       return res.status(500).json({
