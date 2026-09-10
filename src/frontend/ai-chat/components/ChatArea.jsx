@@ -3,12 +3,10 @@ import {
   Copy,
   RefreshCw,
   Check,
-  User,
   ThumbsUp,
   ThumbsDown,
   Share2,
 } from 'lucide-react'
-import agentAvatarUrl from '../../../assets/images/nyx-agent/icon-agent-chat.png'
 import { EmptyState } from './EmptyState'
 import { MarkdownRenderer } from './MarkdownRenderer'
 import { Actions, Action } from './ui/actions'
@@ -19,15 +17,68 @@ import { getFileIcon, formatFileSize } from '../constants'
 ═══════════════════════════════════════════════════ */
 
 export function ChatArea({ messages, isGenerating, onSuggestionClick, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
-  const scrollRef = useRef(null)
-  const bottomRef  = useRef(null)
+  const scrollRef      = useRef(null)
+  const bottomRef      = useRef(null)
+  const isAtBottom     = useRef(true)   // assume at bottom initially
+  const rafRef         = useRef(null)
 
-  // Auto-scroll to bottom when messages change or during streaming
+  /* ── Track whether user is near bottom ── */
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    const el = scrollRef.current
+    if (!el) return
+
+    const onScroll = () => {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+      isAtBottom.current = distFromBottom < 64
     }
+
+    // Wheel/touch: user is actively trying to scroll → mark as not at bottom immediately
+    const onUserScroll = () => {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+      if (distFromBottom > 64) isAtBottom.current = false
+    }
+
+    el.addEventListener('scroll',     onScroll,     { passive: true })
+    el.addEventListener('wheel',      onUserScroll, { passive: true })
+    el.addEventListener('touchmove',  onUserScroll, { passive: true })
+
+    return () => {
+      el.removeEventListener('scroll',    onScroll)
+      el.removeEventListener('wheel',     onUserScroll)
+      el.removeEventListener('touchmove', onUserScroll)
+    }
+  }, [])
+
+  /* ── Auto-scroll during streaming — only when already at bottom ── */
+  useEffect(() => {
+    if (!isGenerating) return
+    if (!isAtBottom.current) return
+
+    const el = scrollRef.current
+    if (!el) return
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      // Use instant jump — smooth conflicts with streaming re-renders and causes jank
+      el.scrollTop = el.scrollHeight
+    })
   }, [messages, isGenerating])
+
+  /* ── When a new conversation starts (send message) → jump to bottom ── */
+  const prevLengthRef = useRef(0)
+  useEffect(() => {
+    const newMsg = messages.length > prevLengthRef.current
+    prevLengthRef.current = messages.length
+    if (!newMsg) return
+    // Always scroll on new user/AI message pair
+    const el = scrollRef.current
+    if (!el) return
+    isAtBottom.current = true
+    el.scrollTop = el.scrollHeight
+  }, [messages.length])
+
+  /* ── Cleanup ── */
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }, [])
 
   if (!messages || messages.length === 0) {
     return (
@@ -106,10 +157,9 @@ function FileAttachments({ files }) {
 
 /* ── Single Message ── */
 function Message({ message, isGenerating, isLastUser, isStreaming = false, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied]       = useState(false)
   const [showThinking, setShowThinking] = useState(false)
-  // Like/Dislike local state — { value: 'like' | 'dislike' | null }
-  const [feedback, setFeedback] = useState(null)
+  const [feedback, setFeedback]   = useState(null)
   const isUser  = message.role === 'user'
   const isAI    = message.role === 'assistant'
   const hasContent = (message.content || '').length > 0
@@ -192,17 +242,6 @@ function Message({ message, isGenerating, isLastUser, isStreaming = false, onReg
 
   return (
     <div className={`chat-msg ${message.role}`}>
-      <div className="chat-msg-avatar">
-        {isUser ? (
-          <User size={15} />
-        ) : (
-          <img
-            src={agentAvatarUrl}
-            alt="Nyx Agent"
-            className="chat-msg-avatar-img"
-          />
-        )}
-      </div>
       <div className="chat-msg-body">
         {/* File attachments (shown above text for user, below for AI) */}
         {isUser && hasFiles && <FileAttachments files={message.files} />}
@@ -239,7 +278,7 @@ function Message({ message, isGenerating, isLastUser, isStreaming = false, onReg
 
         {/* Message actions */}
         {isAI && hasContent && !isStreaming && (
-          <Actions alwaysVisible={false}>
+          <Actions alwaysVisible={true}>
             <Action
               label="Retry"
               onClick={() => onRegenerate?.(message)}
@@ -272,7 +311,7 @@ function Message({ message, isGenerating, isLastUser, isStreaming = false, onReg
 
         {/* User message actions: Copy + Retry (only on last user msg) */}
         {isUser && (canCopy || (isLastUser && onRegenerate)) && (
-          <Actions alwaysVisible={false}>
+          <Actions alwaysVisible={true}>
             {canCopy && (
               <Action label={copied ? 'Copied!' : 'Copy'} onClick={handleCopy}>
                 {copied ? <Check size={14} /> : <Copy size={14} />}
