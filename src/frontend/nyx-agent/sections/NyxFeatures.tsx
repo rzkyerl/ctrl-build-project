@@ -6,13 +6,13 @@ import img2   from '../../../assets/images/nyx-agent/nyx agent - 2.webp'
 import img3   from '../../../assets/images/nyx-agent/nyx agent - 3.webp'
 import img4   from '../../../assets/images/nyx-agent/nyx agent - 4.webp'
 import img5   from '../../../assets/images/nyx-agent/Nyx Agent - 7.webp'
-import img6   from '../../../assets/images/nyx-agent/nyx agent landscape.webp'
+import img6   from '../../../assets/images/nyx-agent/nyx agent - 8.webp'
 import bgUrl from '../../../assets/images/nyx-agent/nyx agent landscape.webp'
 
 const items = [
-  { num: '01', name: 'Tools',        tag: '15 Built-in',       img: img1, desc: 'Shell, view, read, edit, write, patch, grep, glob, fetch, sourcegraph, think, todo, agent, diagnostics — everything the agent needs to work autonomously.' },
+  { num: '01', name: 'Tools',        tag: '15 Built-in',       img: img1, desc: 'Shell, view, read, edit, write, patch, grep, glob, fetch, sourcegraph, think, todo, agent, diagnostics everything the agent needs to work autonomously.' },
   { num: '02', name: 'Multi-Agent',  tag: 'Architecture',      img: img2, desc: 'Dedicated coder, summarizer, task, and title agents. Sub-agent spawning for parallel research with zero context cost.' },
-  { num: '03', name: 'TUI',          tag: 'Terminal Interface', img: img3, desc: 'Split-pane layout with chat, sidebar, and streaming markdown. Runtime theme switching — your terminal, your style.' },
+  { num: '03', name: 'TUI',          tag: 'Terminal Interface', img: img3, desc: 'Split-pane layout with chat, sidebar, and streaming markdown. Runtime theme switching your terminal, your style.' },
   { num: '04', name: 'Integrations', tag: 'MCP + LSP',         img: img4, desc: 'Add MCP servers at runtime without restarting. Real-time LSP diagnostics after every file edit. Drop-in SKILL.md files for custom workflows.' },
   { num: '05', name: 'Providers',    tag: '12+ LLMs',          img: img5, desc: 'Anthropic, OpenAI, Gemini, OpenRouter, GitHub Copilot, xAI, Groq, AWS Bedrock, Azure, Vertex AI, and any OpenAI-compatible endpoint.' },
   { num: '06', name: 'Web Chat',     tag: 'Browser Interface',  img: img6, desc: 'Streaming responses, file upload, multiple models, session history. The same agent, accessible from your browser when you need it.' },
@@ -94,7 +94,7 @@ export function NyxFeatures() {
           <div className="nyx-features-card-header">
             <h2 className="nyx-features-title">What Nyx Can Do</h2>
             <p className="nyx-features-sub">
-              From terminal to browser — one agent, 15 tools, 12+ providers,
+              From terminal to browser one agent, 15 tools, 12+ providers,
               and a TUI that keeps you in the loop.
             </p>
           </div>

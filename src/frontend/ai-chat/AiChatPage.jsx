@@ -280,6 +280,22 @@ export default function AiChatPage() {
     handleSend(userMessage.content)
   }, [handleSend])
 
+  /* ── Like a message (feedback) ── */
+  const handleLike = useCallback((_message, value) => {
+    // value is 'like' or null (toggle off). Hook for analytics / future use.
+    console.debug('[feedback] like:', value)
+  }, [])
+
+  /* ── Dislike a message (feedback) ── */
+  const handleDislike = useCallback((_message, value) => {
+    console.debug('[feedback] dislike:', value)
+  }, [])
+
+  /* ── Share a message ── */
+  const handleShare = useCallback((_message, ok) => {
+    if (!ok) console.warn('Share failed — clipboard unavailable')
+  }, [])
+
   return (
     <div
       className="ai-chat-root"
@@ -390,6 +406,9 @@ export default function AiChatPage() {
           isGenerating={isGenerating}
           onSuggestionClick={handleSuggestionClick}
           onRegenerate={handleRegenerate}
+          onLike={handleLike}
+          onDislike={handleDislike}
+          onShare={handleShare}
         />
 
         {/* Composer */}
