@@ -1097,14 +1097,19 @@
 /* ── File attachments in messages ── */
 .chat-msg-files {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+/* User file list — sits inside the right-side body, aligned end */
+.chat-msg.user .chat-msg-files {
+  align-items: flex-end;
   margin-bottom: 4px;
-  max-width: 85%;
 }
 
 .chat-msg.assistant .chat-msg-files {
-  max-width: 100%;
+  align-items: flex-start;
   margin-top: 8px;
   margin-bottom: 0;
 }
@@ -1115,29 +1120,37 @@
   gap: 2px;
 }
 
+/* Image bubble — same border-radius as user text bubble */
 .chat-msg-file-img {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 12px;
+  max-width: 240px;
+  max-height: 240px;
+  border-radius: 14px 14px 4px 14px;
   border: 1px solid var(--chat-border);
   cursor: pointer;
   transition: opacity var(--chat-transition);
   object-fit: cover;
+  display: block;
+}
+
+.chat-msg.assistant .chat-msg-file-img {
+  border-radius: 4px 14px 14px 14px;
 }
 
 .chat-msg-file-img:hover {
   opacity: 0.85;
 }
 
+/* Doc bubble — same surface as user text bubble */
 .chat-msg-file-doc {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: 12px 12px 4px 12px;
   border: 1px solid var(--chat-border);
   background: var(--chat-surface2);
-  max-width: 240px;
+  max-width: 260px;
+  min-width: 160px;
 }
 
 .chat-msg-file-doc-icon {
@@ -1160,7 +1173,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 160px;
+  max-width: 180px;
 }
 
 .chat-msg-file-doc-size {
@@ -1237,13 +1250,9 @@
   display: flex;
   gap: 4px;
   margin-top: 4px;
-  opacity: 0;
-  transition: opacity var(--chat-transition);
-}
-
-.chat-msg:hover .chat-msg-actions,
-.chat-msg-actions.always-visible {
   opacity: 1;
+  pointer-events: auto;
+  transition: opacity var(--chat-transition);
 }
 
 .chat-msg-action-btn {
@@ -1381,11 +1390,11 @@
   background: var(--chat-surface);
   border: 1px solid var(--chat-border);
   border-radius: 20px;
-  padding: 6px 7px 7px;
+  padding: 10px 10px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-height: 52px;
+  gap: 6px;
+  min-height: 72px;
   transition: border-color var(--chat-transition);
 }
 
@@ -1437,13 +1446,13 @@
   resize: none;
   color: var(--chat-text);
   font-family: var(--chat-font);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: 14px;
+  line-height: 1.6;
   max-height: 40vh;
   overflow-y: auto;
-  padding: 8px 4px 0;
+  padding: 4px 6px 0;
   flex: 1 1 auto;
-  min-height: 16px;
+  min-height: 40px;
 }
 
 .chat-composer-textarea::placeholder {
@@ -1464,6 +1473,8 @@
   gap: 8px;
   margin-top: auto;
   flex-shrink: 0;
+  border-top: 1px solid var(--chat-border);
+  padding-top: 8px;
 }
 
 /* ── Allow dropdown menus to overflow out of the BorderBeam wrapper ──
@@ -2156,7 +2167,7 @@
   }
 
   .chat-composer-box {
-    min-height: 60px; /* bigger tap target on mobile */
+    min-height: 72px; /* bigger tap target on mobile */
   }
 
   .chat-messages {
