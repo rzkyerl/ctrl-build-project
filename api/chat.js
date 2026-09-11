@@ -7,10 +7,12 @@
      - Google Gemini API (fallback, GenAI free tier)
 
    Environment variables:
-   - NVIDIA_NIM_API_KEY  (primary)
-   - GROQ_API_KEY         (fallback)
-   - GEMINI_API_KEY       (fallback, get one at
-                            https://aistudio.google.com/apikey)
+   - NVIDIA_NIM_API_KEY   (primary)
+   - GROQ_API_KEY          (fallback)
+   - GEMINI_API_KEY        (fallback, get one at
+                             https://aistudio.google.com/apikey)
+   - LANGSEARCH_API_KEY    (web search, primary)
+   - SERPER_API_KEY        (web search, fallback)
 
    Model ID routing:
      - NIM    : "openai/gpt-oss-20b"               → integrate.api.nvidia.com
@@ -20,6 +22,14 @@
    In "auto" mode, NIM models are tried first; if all NIM
    models fail (429/5xx), Groq models are tried next, and
    finally Gemini.
+
+   Web search (tool calling):
+     - Round 1: non-streaming request with tool definition
+     - If model returns tool_call → run search → inject results
+     - Round 2: streaming request with search context
+     - SSE events: {type:"searching",query} and {type:"search_done",resultsCount}
+     - If search fails or model doesn't support tools → fallback
+       to keyword detection + system prompt inject
 
    Request body:
    {
@@ -35,6 +45,8 @@
    - If stream=true:  text/event-stream (SSE)
    - If stream=false: application/json
 ══════════════════════════════════════════════════ */
+
+import { executeSearch, formatSearchContext } from './search.js'
 
 const NIM_URL    = 'https://integrate.api.nvidia.com/v1/chat/completions'
 const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions'
@@ -61,10 +73,11 @@ const AUTO_FALLBACK_ORDER = [
   { model: 'qwen/qwen3.6-27b',             provider: 'groq' },
   { model: 'groq/compound-mini',           provider: 'groq' },
   // --- Gemini models (last-resort fallback, free tier) ---
-  { model: 'gemini-2.5-flash',    provider: 'gemini' },
-  { model: 'gemini-2.5-flash-lite', provider: 'gemini' },
-  { model: 'gemini-2.5-pro',      provider: 'gemini' },
-  { model: 'gemini-flash-latest', provider: 'gemini' },
+  // NOTE: Gemini 2.5 models have been deprecated. Using Gemini 3.x instead.
+  { model: 'gemini-3.6-flash',     provider: 'gemini' },
+  { model: 'gemini-3.5-flash-lite', provider: 'gemini' },
+  { model: 'gemini-3.1-pro-preview', provider: 'gemini' },
+  { model: 'gemini-flash-latest',  provider: 'gemini' },
 ]
 
 /**
@@ -75,6 +88,19 @@ const AUTO_FALLBACK_ORDER = [
  *   "gemini/<id>" → Gemini
  *   anything else → NIM
  */
+/** Map deprecated Gemini model IDs to their current replacements. */
+const GEMINI_MODEL_REMAPS = {
+  'gemini-2.5-flash':      'gemini-3.6-flash',
+  'gemini-2.5-flash-lite': 'gemini-3.5-flash-lite',
+  'gemini-2.5-pro':        'gemini-3.1-pro-preview',
+  'gemini-1.5-flash':      'gemini-3.6-flash',
+  'gemini-1.5-pro':        'gemini-3.1-pro-preview',
+}
+
+function remapGeminiModel(modelId) {
+  return GEMINI_MODEL_REMAPS[modelId] || modelId
+}
+
 function detectProvider(modelId) {
   if (!modelId) return { provider: 'nim', model: modelId }
 
@@ -82,7 +108,7 @@ function detectProvider(modelId) {
     return { provider: 'groq', model: modelId.slice(5) }
   }
   if (modelId.startsWith('gemini/')) {
-    return { provider: 'gemini', model: modelId.slice(7) }
+    return { provider: 'gemini', model: remapGeminiModel(modelId.slice(7)) }
   }
   return { provider: 'nim', model: modelId }
 }
@@ -209,6 +235,316 @@ function buildProviderRequest({ provider, modelId, finalMessages, opts, geminiKe
   }
 }
 
+/**
+ * Tool definition for web_search — sent to the model so it
+ * can decide when to trigger a search.
+ *
+ * Not all providers support tool calling (e.g. some NIM models).
+ * For those, we fall back to keyword detection + system prompt inject.
+ */
+const WEB_SEARCH_TOOL = {
+  type: 'function',
+  function: {
+    name: 'web_search',
+    description: 'Search the web for real-time information. Use this when the user asks about current events, latest news, prices, weather, or anything that requires up-to-date information. Do NOT use this for coding, math, or general knowledge questions.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'The search query to look up',
+        }
+      },
+      required: ['query']
+    }
+  }
+}
+
+/**
+ * Keywords that suggest the user's message needs real-time search.
+ * Used as fallback when the model doesn't support tool calling.
+ */
+const SEARCH_KEYWORDS = [
+  // English
+  'today', 'latest', 'current', 'now', 'recent', 'breaking',
+  'price', 'stock', 'weather', 'news', 'score', 'result',
+  'happened', 'happening', 'update',
+  'this week', 'this month', 'this year', 'right now',
+  'real-time', 'realtime', 'real time', 'live',
+  'current price', 'market data',
+  // Indonesian
+  'harga', 'berita', 'terbaru', 'sekarang', 'saat ini', 'cuaca', 'hari ini',
+  'kabar', 'terkini', 'bulan ini', 'minggu ini', 'tahun ini', 'sekarang ini',
+  'gaji', 'nilai', 'kurs', 'erupsi', 'gempa', 'banjir',
+  'bencana', 'kecelakaan', 'demo', 'unjuk rasa', 'pemilu',
+  'pilpres', 'pertandingan', 'jadwal', 'skor', 'hasil',
+  'siapa yang', 'berapa', 'kapan', 'dimana', 'di mana',
+  'update', 'rilis', 'launch', 'peluncuran',
+]
+
+/**
+ * Heuristic: does this message likely need a web search?
+ * Returns a search query string if yes, or null if no.
+ *
+ * Used as fallback when the model doesn't support tool calling,
+ * or when tool calling returned no tool_call.
+ */
+function detectSearchNeed(userMessage) {
+  if (!userMessage || typeof userMessage !== 'string') return null
+  const lower = userMessage.toLowerCase()
+  const needsSearch = SEARCH_KEYWORDS.some(kw => lower.includes(kw))
+  if (!needsSearch) return null
+  // Use the user message itself as the query (truncated)
+  return userMessage.slice(0, 200)
+}
+
+/**
+ * Check if a provider supports tool calling.
+ * NIM: most models yes, but Kimi K3 is uncertain.
+ * Groq: yes (OpenAI tool format).
+ * Gemini: yes but different format (handled separately).
+ */
+function supportsToolCalling(provider, _modelId) {
+  // Tool calling is intentionally disabled for NIM because it is
+  // unreliable across models and can cause empty responses. Keyword
+  // detection is used as the deterministic trigger instead.
+  if (provider === 'groq') return true
+  if (provider === 'nim') return false
+  // Gemini needs a different tool format — skip for now,
+  // use keyword detection fallback instead
+  if (provider === 'gemini') return false
+  return false
+}
+
+/**
+ * Send a non-streaming request to check if the model wants to
+ * call the web_search tool.
+ *
+ * Returns { needsSearch, query, toolCallId? } or null if no tool call.
+ */
+async function checkToolCall({ provider, modelId, finalMessages, opts, requestBuilder, apiKey, apiKeyMode }) {
+  // Build the request with tools attached
+  const reqBody = { ...requestBuilder.body }
+
+  if (provider === 'gemini') {
+    // Gemini tool format is different — add function declarations
+    // to generationConfig
+    reqBody.generationConfig = reqBody.generationConfig || {}
+    reqBody.generationConfig.tools = [{
+      functionDeclarations: [{
+        name: WEB_SEARCH_TOOL.function.name,
+        description: WEB_SEARCH_TOOL.function.description,
+        parameters: WEB_SEARCH_TOOL.function.parameters,
+      }]
+    }]
+  } else {
+    // OpenAI-compatible (NIM + Groq)
+    reqBody.tools = [WEB_SEARCH_TOOL]
+    reqBody.tool_choice = 'auto'
+  }
+
+  // Force non-streaming for tool detection round
+  if (provider === 'gemini') {
+    // Gemini: use generateContent (non-streaming)
+    reqBody.generationConfig = reqBody.generationConfig || {}
+  } else {
+    reqBody.stream = false
+  }
+
+  // Build URL — non-streaming endpoint
+  let url = requestBuilder.url
+  if (provider === 'gemini') {
+    // Switch from streamGenerateContent to generateContent
+    url = url.replace('streamGenerateContent', 'generateContent')
+    // Remove alt=sse
+    url = url.replace('?alt=sse', '')
+    // Re-add key
+    if (!url.includes('key=')) {
+      url += (url.includes('?') ? '&' : '?') + `key=${encodeURIComponent(apiKey)}`
+    }
+  }
+
+  const headers = { ...requestBuilder.headers }
+  if (provider !== 'gemini') {
+    headers['Accept'] = 'application/json'
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 8000)
+
+  try {
+    const resp = await fetch(url, {
+      method:  'POST',
+      headers,
+      body:    JSON.stringify(reqBody),
+      signal:  controller.signal,
+    })
+    clearTimeout(timeoutId)
+
+    if (!resp.ok) {
+      console.warn(`[tool-call] ${provider}/${modelId} returned ${resp.status}`)
+      await resp.text().catch(() => {})
+      return null
+    }
+
+    const data = await resp.json()
+
+    // OpenAI-compatible: check choices[0].message.tool_calls
+    if (provider === 'nim' || provider === 'groq') {
+      const toolCalls = data?.choices?.[0]?.message?.tool_calls
+      if (toolCalls && toolCalls.length > 0) {
+        const tc = toolCalls[0]
+        if (tc.function?.name === 'web_search') {
+          try {
+            const args = JSON.parse(tc.function.arguments || '{}')
+            return {
+              needsSearch: true,
+              query:       args.query || '',
+              toolCallId:  tc.id,
+            }
+          } catch {
+            return null
+          }
+        }
+      }
+      return null
+    }
+
+    // Gemini: check candidates[0].content.parts for functionCall
+    if (provider === 'gemini') {
+      const parts = data?.candidates?.[0]?.content?.parts || []
+      for (const part of parts) {
+        if (part.functionCall && part.functionCall.name === 'web_search') {
+          const query = part.functionCall.args?.query || ''
+          return { needsSearch: true, query, toolCallId: undefined }
+        }
+      }
+      return null
+    }
+
+    return null
+  } catch (error) {
+    clearTimeout(timeoutId)
+    console.warn(`[tool-call] ${provider}/${modelId} error: ${error.message}`)
+    return null
+  }
+}
+
+/**
+ * Build search context messages for round 2.
+ *
+ * For OpenAI-compatible providers: adds tool message to messages array.
+ * For Gemini: adds functionResponse to the contents.
+ */
+function buildSearchMessages(provider, finalMessages, searchQuery, searchResults, toolCallId) {
+  if (provider === 'gemini') {
+    // Gemini: add model's functionCall response + functionResponse
+    const messages = [...finalMessages]
+    // Find the system message and separate it
+    const sysMsg = messages.find(m => m.role === 'system')
+    const conversation = messages.filter(m => m.role !== 'system').map(m => ({
+      role:  m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: typeof m.content === 'string' ? m.content : extractText(m.content) }],
+    }))
+
+    // Add the model's function call
+    conversation.push({
+      role:  'model',
+      parts: [{
+        functionCall: { name: 'web_search', args: { query: searchQuery } }
+      }]
+    })
+
+    // Add our function response
+    conversation.push({
+      role:  'user',
+      parts: [{
+        functionResponse: {
+          name: 'web_search',
+          response: { results: formatSearchContext(searchQuery, searchResults) }
+        }
+      }]
+    })
+
+    const body = {
+      contents: conversation,
+      generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+    }
+    if (sysMsg) {
+      body.systemInstruction = {
+        role: 'system',
+        parts: [{ text: typeof sysMsg.content === 'string' ? sysMsg.content : extractText(sysMsg.content) }],
+      }
+    }
+    return body
+  }
+
+  // OpenAI-compatible: append tool messages to the array
+  const messages = [...finalMessages]
+
+  // Add assistant message with tool call
+  messages.push({
+    role:    'assistant',
+    content: null,
+    tool_calls: [{
+      id: toolCallId || `call_${Date.now()}`,
+      type: 'function',
+      function: {
+        name: 'web_search',
+        arguments: JSON.stringify({ query: searchQuery }),
+      }
+    }]
+  })
+
+  // Add tool response message
+  messages.push({
+    role:    'tool',
+    content: formatSearchContext(searchQuery, searchResults),
+    tool_call_id: toolCallId || `call_${Date.now()}`,
+  })
+
+  return messages
+}
+
+/**
+ * Build a system-prompt-injected messages array (fallback for
+ * models that don't support tool calling).
+ *
+ * Appends search results to the system prompt as context.
+ */
+function buildFallbackSearchMessages(finalMessages, searchQuery, searchResults) {
+  const searchContext = formatSearchContext(searchQuery, searchResults)
+  const messages = [...finalMessages]
+
+  // Find system message and append search context
+  const sysIdx = messages.findIndex(m => m.role === 'system')
+  if (sysIdx >= 0) {
+    const sysContent = typeof messages[sysIdx].content === 'string'
+      ? messages[sysIdx].content
+      : extractText(messages[sysIdx].content)
+    messages[sysIdx] = {
+      ...messages[sysIdx],
+      content: sysContent + '\n\n' + searchContext,
+    }
+  } else {
+    // No system message — prepend one with search context
+    messages.unshift({
+      role: 'system',
+      content: searchContext,
+    })
+  }
+
+  return messages
+}
+
+/**
+ * Write an SSE event to the response.
+ * Used for search indicator events.
+ */
+function writeSSEEvent(res, data) {
+  res.write(`data: ${JSON.stringify(data)}\n\n`)
+}
+
 export default async function handler(req, res) {
   // Only allow POST
   if (req.method !== 'POST') {
@@ -217,7 +553,7 @@ export default async function handler(req, res) {
 
   const nimKey    = process.env.NVIDIA_NIM_API_KEY
   const groqKey   = process.env.GROQ_API_KEY
-  const geminiKey = process.env.GEMINI_API_KEY
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY
 
   if (!nimKey && !groqKey && !geminiKey) {
     return res.status(500).json({
@@ -239,10 +575,30 @@ export default async function handler(req, res) {
   }
 
   // Inject system prompt if not already present
+  function getCurrentDateString() {
+    const now = new Date()
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    const dateStr = now.toLocaleDateString('id-ID', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: tz,
+    })
+    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: tz })
+    return `${dateStr}, ${timeStr} (${tz})`
+  }
+
   const SYSTEM_PROMPT = {
     role: 'system',
-    content: `You are a helpful, knowledgeable AI assistant. Follow these guidelines:
+    content: `You are a helpful, knowledgeable AI assistant.
 
+**Current date and time: ${getCurrentDateString()}**
+
+When mentioning dates, ALWAYS use this current date as reference. Do NOT invent or guess dates. If search results contain a date, use that specific date only if it makes sense in context, but always clarify what "today" means using the current date above.
+
+You may be provided with web search results below when the user asks about current events, latest news, recent prices, weather, sports scores, recent disasters, elections, or anything that may have changed after your knowledge cutoff.
+
+Follow these guidelines:
+
+- When web search results are provided in the system prompt, base your answer on those results and cite the source URLs naturally in your answer.
+- If no search results are provided or they are not useful, say so honestly and answer with your best knowledge, mentioning that the information may not be up-to-date.
 - Use Markdown for formatting: headings (##, ###), **bold**, *italic*, lists, tables, blockquotes
 - For code snippets, use fenced code blocks with language tags: \`\`\`js, \`\`\`python, \`\`\`bash, etc.
 - Be concise and direct. Avoid unnecessary filler.
@@ -286,6 +642,61 @@ export default async function handler(req, res) {
 
   const opts = { max_tokens, temperature, seed, stream }
 
+  // Check if web search is available (at least one search provider configured)
+  const langSearchKey = process.env.LANGSEARCH_API_KEY
+  const serperKey      = process.env.SERPER_API_KEY
+  const hasSearch = !!(langSearchKey || serperKey)
+
+  // Extract last user message for keyword detection fallback
+  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+  const lastUserText = typeof lastUserMsg?.content === 'string'
+    ? lastUserMsg.content
+    : extractText(lastUserMsg?.content)
+
+  // ── Pre-search phase (runs once, before trying any model) ──
+  // Detect whether the message needs web search and execute it up-front.
+  // Results are injected into messages so EVERY model in the fallback
+  // chain sees them. When search is triggered we commit SSE headers early
+  // and stream searching/search_done indicators before the model loop —
+  // that way the client sees the animation immediately while we wait for
+  // search results. The model loop then skips re-setting headers when
+  // res.headersSent is already true.
+  let searchContextMessages = finalMessages
+  let didSearch = false
+  let searchQuery = null
+  let searchResult = null
+
+  if (hasSearch && stream) {
+    const fallbackQuery = detectSearchNeed(lastUserText)
+    if (fallbackQuery) {
+      searchQuery = fallbackQuery
+      console.log(`[chat] Keyword fallback triggered search: "${searchQuery}"`)
+
+      // Set SSE headers early so we can stream the searching indicator
+      // to the client BEFORE the search starts — the search itself
+      // can take a few seconds, and we want the animation visible then.
+      res.setHeader('Content-Type',  'text/event-stream')
+      res.setHeader('Cache-Control', 'no-cache')
+      res.setHeader('Connection',    'keep-alive')
+      writeSSEEvent(res, { type: 'searching', query: searchQuery })
+    }
+
+    if (searchQuery) {
+      try {
+        searchResult = await executeSearch(searchQuery)
+      } catch (e) {
+        console.warn(`[chat] Search execution failed: ${e.message}`)
+        searchResult = { results: [], provider: 'none' }
+      }
+      console.log(`[chat] Search done — ${searchResult.results.length} results`)
+      searchContextMessages = buildFallbackSearchMessages(finalMessages, searchQuery, searchResult.results)
+      didSearch = true
+
+      // Tell the client the search is done (stop the searching animation)
+      writeSSEEvent(res, { type: 'search_done', resultsCount: searchResult.results.length })
+    }
+  }
+
   for (let i = 0; i < modelsToTry.length; i++) {
     const { model: tryModel, provider } = modelsToTry[i]
     const isLast = i === modelsToTry.length - 1
@@ -293,7 +704,7 @@ export default async function handler(req, res) {
     const request = buildProviderRequest({
       provider,
       modelId:   tryModel,
-      finalMessages,
+      finalMessages: searchContextMessages,
       opts,
       geminiKey,
       nimKey,
@@ -305,8 +716,17 @@ export default async function handler(req, res) {
       ? `${request.url}&key=${encodeURIComponent(request.apiKey)}`
       : request.url
 
-    // AbortController with 6-second timeout — if the provider doesn't
-    // respond in time, skip to the next model in the fallback chain.
+    // Safety guard: if response headers have already been sent (e.g. by
+    // the search indicator phase), we can no longer send JSON errors or
+    // fallback via status codes. For streaming we can still try the next
+    // model; for non-streaming we must end the response.
+    if (res.headersSent && !stream) {
+      console.warn('[chat] Headers already sent; cannot fallback (non-stream).')
+      if (!res.writableEnded) res.end()
+      return
+    }
+
+    // AbortController with 6-second timeout — covers the initial connection.
     const controller = new AbortController()
     const timeoutId  = setTimeout(() => controller.abort(), 6000)
 
@@ -324,6 +744,10 @@ export default async function handler(req, res) {
         console.warn(`[${provider}] ${tryModel} returned ${apiResponse.status}`)
         await apiResponse.text().catch(() => {})
         if (!isLast) continue
+        if (res.headersSent) {
+          writeSSEEvent(res, { type: 'error', message: 'All models are rate-limited. Please try again.' })
+          return res.end()
+        }
         return res.status(503).json({
           error: 'All models are rate-limited. Please try again in a moment.',
         })
@@ -333,22 +757,31 @@ export default async function handler(req, res) {
         const errorText = await apiResponse.text().catch(() => 'Unknown error')
         console.error(`[${provider}] ${tryModel} error:`, apiResponse.status, errorText)
         if (!isLast) continue
+        if (res.headersSent) {
+          writeSSEEvent(res, { type: 'error', message: 'The AI couldn\'t generate a reply. Please try again.' })
+          return res.end()
+        }
         return res.status(apiResponse.status).json({
           error: 'The AI couldn\'t generate a reply. Please try again.',
         })
       }
 
       // Success — expose which model was used
-      res.setHeader('X-Used-Model', tryModel)
-      res.setHeader('Access-Control-Expose-Headers', 'X-Used-Model')
-      res.setHeader('X-Used-Provider', provider)
-      res.setHeader('Access-Control-Expose-Headers', 'X-Used-Model, X-Used-Provider')
       if (i > 0) console.log(`Fallback succeeded with [${provider}] ${tryModel}`)
 
       if (stream) {
-        res.setHeader('Content-Type',  'text/event-stream')
-        res.setHeader('Cache-Control', 'no-cache')
-        res.setHeader('Connection',    'keep-alive')
+        // Set SSE headers + model-identity headers only if not already sent.
+        // The search phase may have already committed headers (Content-Type,
+        // Cache-Control, Connection) — calling setHeader after that throws
+        // ERR_HTTP_HEADERS_SENT. X-Used-Model is best-effort; skip when late.
+        if (!res.headersSent) {
+          res.setHeader('Content-Type',  'text/event-stream')
+          res.setHeader('Cache-Control', 'no-cache')
+          res.setHeader('Connection',    'keep-alive')
+          res.setHeader('X-Used-Model',  tryModel)
+          res.setHeader('X-Used-Provider', provider)
+          res.setHeader('Access-Control-Expose-Headers', 'X-Used-Model, X-Used-Provider')
+        }
 
         const reader  = apiResponse.body.getReader()
         const decoder = new TextDecoder()
@@ -385,20 +818,29 @@ export default async function handler(req, res) {
       if (error.name === 'AbortError') {
         // Timeout — skip to next model
         console.warn(`[${provider}] ${tryModel} timed out after 6s`)
-        // If we already started streaming, we can't fall back — the
-        // client has received partial data. Just end the response.
-        if (res.headersSent) {
-          res.end()
-          return
+        if (!isLast) {
+          console.warn('[chat] Trying next model...')
+          continue
         }
-        if (!isLast) continue
+        // Last model — send error and end
+        if (res.headersSent) {
+          writeSSEEvent(res, { type: 'error', message: 'All models timed out. Please try again.' })
+          return res.end()
+        }
         return res.status(504).json({
           error: 'All models timed out. Please try again in a moment.',
         })
       }
 
       console.error(`[${provider}] ${tryModel} fetch error:`, error.message)
-      if (!isLast) continue
+      if (!isLast) {
+        console.warn('[chat] Trying next model...')
+        continue
+      }
+      if (res.headersSent) {
+        writeSSEEvent(res, { type: 'error', message: 'The AI couldn\'t generate a reply. Please try again.' })
+        return res.end()
+      }
       return res.status(500).json({
         error: 'The AI couldn\'t generate a reply. Please try again.',
       })

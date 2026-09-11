@@ -42,10 +42,11 @@ const AUTO_FALLBACK_ORDER = [
   { model: 'qwen/qwen3.6-27b',             provider: 'groq' },
   { model: 'groq/compound-mini',           provider: 'groq' },
   // --- Gemini models (last-resort fallback, free tier) ---
-  { model: 'gemini-2.5-flash',    provider: 'gemini' },
-  { model: 'gemini-2.5-flash-lite', provider: 'gemini' },
-  { model: 'gemini-2.5-pro',      provider: 'gemini' },
-  { model: 'gemini-flash-latest', provider: 'gemini' },
+  // NOTE: Gemini 2.5 models have been deprecated. Using Gemini 3.x instead.
+  { model: 'gemini-3.6-flash',     provider: 'gemini' },
+  { model: 'gemini-3.5-flash-lite', provider: 'gemini' },
+  { model: 'gemini-3.1-pro-preview', provider: 'gemini' },
+  { model: 'gemini-flash-latest',  provider: 'gemini' },
 ]
 
 /** Models to try for title generation (NIM → Groq → Gemini) */
@@ -54,7 +55,7 @@ const TITLE_FALLBACK_MODELS = [
   { model: 'deepseek-ai/deepseek-v4-flash-0731',   provider: 'nim' },
   { model: 'groq/compound-mini',                    provider: 'groq' },
   { model: 'openai/gpt-oss-20b',                    provider: 'groq' },
-  { model: 'gemini-2.5-flash-lite',                 provider: 'gemini' },
+  { model: 'gemini-3.5-flash-lite',                 provider: 'gemini' },
   { model: 'gemini-flash-latest',                   provider: 'gemini' },
 ]
 
@@ -71,10 +72,23 @@ function getProviderUrl(provider) {
   return NIM_URL
 }
 
+/** Map deprecated Gemini model IDs to their current replacements. */
+const GEMINI_MODEL_REMAPS = {
+  'gemini-2.5-flash':      'gemini-3.6-flash',
+  'gemini-2.5-flash-lite': 'gemini-3.5-flash-lite',
+  'gemini-2.5-pro':        'gemini-3.1-pro-preview',
+  'gemini-1.5-flash':      'gemini-3.6-flash',
+  'gemini-1.5-pro':        'gemini-3.1-pro-preview',
+}
+
+function remapGeminiModel(modelId) {
+  return GEMINI_MODEL_REMAPS[modelId] || modelId
+}
+
 function detectProvider(modelId) {
   if (!modelId) return { provider: 'nim', model: modelId }
   if (modelId.startsWith('groq/'))   return { provider: 'groq',   model: modelId.slice(5) }
-  if (modelId.startsWith('gemini/')) return { provider: 'gemini', model: modelId.slice(7) }
+  if (modelId.startsWith('gemini/')) return { provider: 'gemini', model: remapGeminiModel(modelId.slice(7)) }
   return { provider: 'nim', model: modelId }
 }
 
@@ -132,10 +146,35 @@ function extractText(content) {
   return ''
 }
 
-const SYSTEM_PROMPT = {
-  role: 'system',
-  content: `You are a helpful, knowledgeable AI assistant. Follow these guidelines:
+function getCurrentDateString() {
+  const now = new Date()
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  const dateStr = now.toLocaleDateString('id-ID', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: tz,
+  })
+  const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: tz })
+  return `${dateStr}, ${timeStr} (${tz})`
+}
 
+function buildSystemPrompt() {
+  return {
+    role: 'system',
+    content: `You are a helpful, knowledgeable AI assistant.
+
+**Current date and time: ${getCurrentDateString()}**
+
+When mentioning dates, ALWAYS use this current date as reference. Do NOT invent or guess dates. If search results contain a date, use that specific date only if it makes sense in context, but always clarify what "today" means using the current date above.
+
+You may be provided with web search results below when the user asks about current events, latest news, recent prices, weather, sports scores, recent disasters, elections, or anything that may have changed after your knowledge cutoff.
+
+Follow these guidelines:
+
+- When web search results are provided in the system prompt, base your answer on those results and cite the source URLs naturally in your answer.
+- If no search results are provided or they are not useful, say so honestly and answer with your best knowledge, mentioning that the information may not be up-to-date.
 - Use Markdown for formatting: headings (##, ###), **bold**, *italic*, lists, tables, blockquotes
 - For code snippets, use fenced code blocks with language tags: \`\`\`js, \`\`\`python, \`\`\`bash, etc.
 - Be concise and direct. Avoid unnecessary filler.
@@ -144,6 +183,7 @@ const SYSTEM_PROMPT = {
 - For long responses, use headings to organize sections
 - Use tables for structured comparisons
 - Keep explanations beginner-friendly unless asked otherwise`,
+  }
 }
 
 /* ── Parse JSON body from request ── */
@@ -201,7 +241,7 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
 
   // Inject system prompt
   const hasSystem = messages.some(m => m.role === 'system')
-  const finalMessages = hasSystem ? messages : [SYSTEM_PROMPT, ...messages]
+  const finalMessages = hasSystem ? messages : [buildSystemPrompt(), ...messages]
 
   const isAuto = model === 'auto'
   let modelsToTry
@@ -242,13 +282,83 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
 
   const opts = { max_tokens, temperature, seed, stream }
 
+  // Check if web search is available
+  const langSearchKey = process.env.LANGSEARCH_API_KEY
+  const serperKey      = process.env.SERPER_API_KEY
+  const hasSearch = !!(langSearchKey || serperKey)
+
+  // Extract last user message for keyword detection fallback
+  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+  const lastUserText = typeof lastUserMsg?.content === 'string'
+    ? lastUserMsg.content
+    : extractText(lastUserMsg?.content)
+
+  // ── Pre-search phase (runs once, before trying any model) ──
+  // Detect whether the message likely needs web search and execute it
+  // up-front. The results are injected into the messages so that *every*
+  // model in the fallback chain sees them. We still stream a "searching"
+  // indicator to the client, but we DO NOT commit the SSE headers until
+  // a model actually starts streaming its answer — that way we can still
+  // fallback to the next model if the current one fails.
+  let searchContextMessages = finalMessages
+  let didSearch = false
+  let searchQuery = null
+  let searchResult = null
+
+  if (hasSearch && stream) {
+    // 1) Keyword detection (deterministic, works for all providers)
+    const fallbackQuery = detectSearchNeed(lastUserText)
+    if (fallbackQuery) {
+      searchQuery = fallbackQuery
+      console.log(`[dev-api] Keyword fallback triggered search: "${searchQuery}"`)
+
+      // Set SSE headers early so we can stream the searching indicator
+      // to the client BEFORE the search starts — the search itself
+      // can take a few seconds, and we want the animation visible then.
+      res.setHeader('Content-Type',  'text/event-stream')
+      res.setHeader('Cache-Control', 'no-cache')
+      res.setHeader('Connection',    'keep-alive')
+      writeSSEEvent(res, { type: 'searching', query: searchQuery })
+    }
+
+    // 2) Execute search if triggered
+    if (searchQuery) {
+      try {
+        searchResult = await executeSearch(searchQuery)
+      } catch (e) {
+        console.warn(`[dev-api] Search execution failed: ${e.message}`)
+        searchResult = { results: [], provider: 'none' }
+      }
+      console.log(`[dev-api] Search done — ${searchResult.results.length} results`)
+      searchContextMessages = buildFallbackSearchMessages(
+        finalMessages, searchQuery, searchResult.results
+      )
+      didSearch = true
+
+      // Tell the client the search is done (stop the searching animation)
+      writeSSEEvent(res, { type: 'search_done', resultsCount: searchResult.results.length })
+    }
+  }
+
   for (let i = 0; i < modelsToTry.length; i++) {
     const { model: tryModel, provider } = modelsToTry[i]
     const isLast = i === modelsToTry.length - 1
     const apiKey = provider === 'groq' ? groqKey : provider === 'gemini' ? geminiKey : nimKey
 
-    // Build the request
-    const reqBody = buildRequestBody(provider, tryModel, finalMessages, opts)
+    // Safety guard: if response headers have already been sent (e.g. by
+    // the search indicator phase), we can no longer send JSON errors or
+    // fallback via status codes. Instead, we stream an SSE error event
+    // and end the response.
+    if (res.headersSent && !stream) {
+      console.warn('[dev-api] Headers already sent; cannot fallback (non-stream).')
+      if (!res.writableEnded) res.end()
+      return
+    }
+    // For streaming: if headers already sent, we can still stream —
+    // just can't fallback to another model if this one fails mid-stream.
+
+    // Build the request — use search-augmented messages if we searched
+    const reqBody = buildRequestBody(provider, tryModel, searchContextMessages, opts)
 
     let apiUrl
     let headers
@@ -265,18 +375,28 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
       }
     }
 
+    const controller = new AbortController()
+    const timeoutId  = setTimeout(() => controller.abort(), 6000)
+
     try {
       const apiResponse = await fetch(apiUrl, {
         method:  'POST',
         headers,
         body:    JSON.stringify(reqBody),
+        signal:  controller.signal,
       })
+      clearTimeout(timeoutId)
 
       // If rate-limited or server error, try next model
       if (apiResponse.status === 429 || apiResponse.status >= 500) {
         console.warn(`[dev-api] [${provider}] ${tryModel} returned ${apiResponse.status}, trying next...`)
         await apiResponse.text().catch(() => {})
         if (!isLast) continue
+        // If headers already sent (streaming), send SSE error and end
+        if (res.headersSent) {
+          writeSSEEvent(res, { type: 'error', message: 'All models are rate-limited. Please try again.' })
+          return res.end()
+        }
         res.statusCode = 503
         res.setHeader('Content-Type', 'application/json')
         return res.end(JSON.stringify({ error: 'All models are rate-limited. Please try again in a moment.' }))
@@ -287,48 +407,265 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
         const errorText = await apiResponse.text().catch(() => 'Unknown error')
         console.error(`[dev-api] [${provider}] ${tryModel} error:`, apiResponse.status, errorText)
         if (!isLast) continue
+        // If headers already sent (streaming), send SSE error and end
+        if (res.headersSent) {
+          writeSSEEvent(res, { type: 'error', message: 'The AI couldn\'t generate a reply. Please try again.' })
+          return res.end()
+        }
         res.statusCode = apiResponse.status
         res.setHeader('Content-Type', 'application/json')
         return res.end(JSON.stringify({ error: 'The AI couldn\'t generate a reply. Please try again.' }))
       }
 
-      // Success! Stream or return the response
+      // Success! Set SSE headers if not already set (search phase may
+      // have already sent them), then stream the model response.
+      if (!res.headersSent) {
+        res.setHeader('Content-Type',  'text/event-stream')
+        res.setHeader('Cache-Control', 'no-cache')
+        res.setHeader('Connection',    'keep-alive')
+      }
       setModelHeaders(res, tryModel, provider)
       if (i > 0) {
         console.log(`[dev-api] Fallback succeeded with [${provider}] ${tryModel}`)
       }
 
-      if (stream) {
-        res.setHeader('Content-Type',  'text/event-stream')
-        res.setHeader('Cache-Control', 'no-cache')
-        res.setHeader('Connection',    'keep-alive')
+      const reader = apiResponse.body.getReader()
+      const decoder = new TextDecoder()
 
-        const reader = apiResponse.body.getReader()
-        const decoder = new TextDecoder()
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          res.write(decoder.decode(value, { stream: true }))
-        }
-        res.end()
-      } else {
-        const data = await apiResponse.json()
-        res.setHeader('Content-Type', 'application/json')
-        return res.end(JSON.stringify(data))
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        res.write(decoder.decode(value, { stream: true }))
       }
+      res.end()
       return // response sent, stop trying
     } catch (error) {
+      clearTimeout(timeoutId)
+
+      if (error.name === 'AbortError') {
+        console.warn(`[dev-api] [${provider}] ${tryModel} timed out after 6s`)
+        // If headers already sent (search phase), we can still try
+        // the next model — just don't try to set status codes.
+        if (!isLast) {
+          console.warn(`[dev-api] Trying next model...`)
+          continue
+        }
+        // Last model — send error and end
+        if (res.headersSent) {
+          writeSSEEvent(res, { type: 'error', message: 'All models timed out. Please try again.' })
+          return res.end()
+        }
+        res.statusCode = 504
+        res.setHeader('Content-Type', 'application/json')
+        return res.end(JSON.stringify({ error: 'All models timed out. Please try again in a moment.' }))
+      }
+
       console.error(`[dev-api] [${provider}] ${tryModel} fetch error:`, error.message)
       if (!isLast) {
         console.warn(`[dev-api] Trying next model...`)
         continue
+      }
+      if (res.headersSent) {
+        writeSSEEvent(res, { type: 'error', message: 'The AI couldn\'t generate a reply. Please try again.' })
+        return res.end()
       }
       res.statusCode = 500
       res.setHeader('Content-Type', 'application/json')
       return res.end(JSON.stringify({ error: 'The AI couldn\'t generate a reply. Please try again.' }))
     }
   }
+}
+
+/* ── Handle /api/search ── */
+const LANGSEARCH_URL = 'https://api.langsearch.com/v1/web-search'
+const SERPER_URL     = 'https://google.serper.dev/search'
+const SEARCH_TIMEOUT_MS = 5000
+const MAX_SEARCH_RESULTS = 5
+
+function normalizeLangSearch(data) {
+  if (!data || !Array.isArray(data.results)) return []
+  return data.results.slice(0, MAX_SEARCH_RESULTS).map(r => ({
+    title:   r.title || '',
+    url:     r.url || r.link || '',
+    snippet: r.snippet || r.summary || '',
+    date:    r.published_date || r.date || undefined,
+  }))
+}
+
+function normalizeSerper(data) {
+  if (!data || !Array.isArray(data.organic)) return []
+  return data.organic.slice(0, MAX_SEARCH_RESULTS).map(r => ({
+    title:   r.title || '',
+    url:     r.link || r.url || '',
+    snippet: r.snippet || '',
+    date:    r.date || undefined,
+  }))
+}
+
+function formatSearchContext(query, results) {
+  if (!results || results.length === 0) {
+    return `[Tool Result — web_search]\nQuery: "${query}"\n\nNo results found.\n\n[End of search results]`
+  }
+  const lines = results.map((r, i) => {
+    const dateStr = r.date ? ` — ${r.date}` : ''
+    return `${i + 1}. ${r.title}\n   URL: ${r.url}${dateStr}\n   ${r.snippet}`
+  })
+  return `[Tool Result — web_search]\nQuery: "${query}"\n\n${lines.join('\n\n')}\n\n[End of search results — cite sources in your answer]\n\nIMPORTANT: The dates shown next to search results are the publication dates of those articles/pages, NOT today's date. Always use the current date from the system prompt above when referring to "today". Do not echo dates from search results as the current date.`
+}
+
+async function executeSearch(query) {
+  const trimmedQuery = (query || '').slice(0, 200).trim()
+  if (!trimmedQuery) return { results: [], provider: 'none' }
+
+  const langSearchKey = process.env.LANGSEARCH_API_KEY
+  const serperKey      = process.env.SERPER_API_KEY
+
+  if (langSearchKey) {
+    try {
+      const controller = new AbortController()
+      const timeoutId  = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS)
+      const resp = await fetch(LANGSEARCH_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${langSearchKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: trimmedQuery, freshness: 'noLimit', count: MAX_SEARCH_RESULTS }),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+      console.log(`[dev-api] LangSearch response status: ${resp.status}`)
+      if (resp.ok) {
+        const data = await resp.json()
+        const results = normalizeLangSearch(data)
+        console.log(`[dev-api] LangSearch returned ${results.length} results`)
+        if (results.length > 0) return { results, provider: 'langsearch' }
+      } else {
+        const errText = await resp.text().catch(() => '')
+        console.warn(`[dev-api] LangSearch error ${resp.status}: ${errText.slice(0, 200)}`)
+      }
+    } catch (e) {
+      console.warn(`[dev-api] LangSearch failed: ${e.message}`)
+    }
+  }
+
+  if (serperKey) {
+    try {
+      const controller = new AbortController()
+      const timeoutId  = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS)
+      const resp = await fetch(SERPER_URL, {
+        method: 'POST',
+        headers: { 'X-API-KEY': serperKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: trimmedQuery, num: MAX_SEARCH_RESULTS }),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+      console.log(`[dev-api] Serper response status: ${resp.status}`)
+      if (resp.ok) {
+        const data = await resp.json()
+        const results = normalizeSerper(data)
+        console.log(`[dev-api] Serper returned ${results.length} results`)
+        if (results.length > 0) return { results, provider: 'serper' }
+      } else {
+        const errText = await resp.text().catch(() => '')
+        console.warn(`[dev-api] Serper error ${resp.status}: ${errText.slice(0, 200)}`)
+      }
+    } catch (e) {
+      console.warn(`[dev-api] Serper failed: ${e.message}`)
+    }
+  }
+
+  return { results: [], provider: 'none' }
+}
+
+async function handleSearch(req, res) {
+  if (req.method !== 'POST') {
+    res.statusCode = 405
+    res.setHeader('Content-Type', 'application/json')
+    return res.end(JSON.stringify({ error: 'Method not allowed' }))
+  }
+  let body
+  try {
+    body = await parseBody(req)
+  } catch {
+    res.statusCode = 400
+    res.setHeader('Content-Type', 'application/json')
+    return res.end(JSON.stringify({ error: 'Invalid JSON body' }))
+  }
+  const { query } = body || {}
+  if (!query || typeof query !== 'string') {
+    res.statusCode = 400
+    res.setHeader('Content-Type', 'application/json')
+    return res.end(JSON.stringify({ error: 'Query string is required' }))
+  }
+  const result = await executeSearch(query)
+  res.setHeader('Content-Type', 'application/json')
+  return res.end(JSON.stringify(result))
+}
+
+/* ── Web search tool calling helpers ── */
+const WEB_SEARCH_TOOL = {
+  type: 'function',
+  function: {
+    name: 'web_search',
+    description: 'Search the web for real-time information. Use this when the user asks about current events, latest news, prices, weather, or anything that requires up-to-date information.',
+    parameters: {
+      type: 'object',
+      properties: { query: { type: 'string', description: 'The search query to look up' } },
+      required: ['query']
+    }
+  }
+}
+
+const SEARCH_KEYWORDS = [
+  // English
+  'today', 'latest', 'current', 'now', 'recent', 'breaking',
+  'price', 'stock', 'weather', 'news', 'score', 'result',
+  'happened', 'happening', 'update',
+  'this week', 'this month', 'this year', 'right now',
+  'real-time', 'realtime', 'real time', 'live',
+  'current price', 'market data',
+  // Indonesian
+  'harga', 'berita', 'terbaru', 'sekarang', 'saat ini', 'cuaca', 'hari ini',
+  'kabar', 'terkini', 'bulan ini', 'minggu ini', 'tahun ini', 'sekarang ini',
+  'gaji', 'nilai', 'kurs', 'erupsi', 'gempa', 'banjir',
+  'bencana', 'kecelakaan', 'demo', 'unjuk rasa', 'pemilu',
+  'pilpres', 'pertandingan', 'jadwal', 'skor', 'hasil',
+  'siapa yang', 'berapa', 'kapan', 'dimana', 'di mana',
+  'update', 'rilis', 'launch', 'peluncuran',
+]
+
+function detectSearchNeed(userMessage) {
+  if (!userMessage || typeof userMessage !== 'string') return null
+  const lower = userMessage.toLowerCase()
+  const needsSearch = SEARCH_KEYWORDS.some(kw => lower.includes(kw))
+  if (!needsSearch) return null
+  return userMessage.slice(0, 200)
+}
+
+function supportsToolCalling(provider, _modelId) {
+  // Tool calling is intentionally disabled for NIM because it is
+  // unreliable across models and can cause empty responses. Keyword
+  // detection is used as the deterministic trigger instead.
+  if (provider === 'groq') return true
+  if (provider === 'nim') return false
+  return false
+}
+
+function buildFallbackSearchMessages(finalMessages, searchQuery, searchResults) {
+  const searchContext = formatSearchContext(searchQuery, searchResults)
+  const messages = [...finalMessages]
+  const sysIdx = messages.findIndex(m => m.role === 'system')
+  if (sysIdx >= 0) {
+    const sysContent = typeof messages[sysIdx].content === 'string'
+      ? messages[sysIdx].content
+      : extractText(messages[sysIdx].content)
+    messages[sysIdx] = { ...messages[sysIdx], content: sysContent + '\n\n' + searchContext }
+  } else {
+    messages.unshift({ role: 'system', content: searchContext })
+  }
+  return messages
+}
+
+function writeSSEEvent(res, data) {
+  res.write(`data: ${JSON.stringify(data)}\n\n`)
 }
 
 /* ── Handle /api/title ── */
@@ -463,7 +800,7 @@ export function devApiProxy() {
 
         const nimKey    = process.env.NVIDIA_NIM_API_KEY
         const groqKey   = process.env.GROQ_API_KEY
-        const geminiKey = process.env.GEMINI_API_KEY
+        const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY
 
         if (path === '/api/chat') {
           return handleChat(req, res, nimKey, groqKey, geminiKey)
@@ -471,6 +808,10 @@ export function devApiProxy() {
 
         if (path === '/api/title') {
           return handleTitle(req, res, nimKey, groqKey, geminiKey)
+        }
+
+        if (path === '/api/search') {
+          return handleSearch(req, res)
         }
 
         // Unknown /api route — pass through to Vite

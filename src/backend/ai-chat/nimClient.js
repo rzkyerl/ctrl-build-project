@@ -55,9 +55,9 @@ export const AUTO_FALLBACK_ORDER = [
   'groq/qwen/qwen3.6-27b',
   'groq/groq/compound-mini',
   // --- Gemini models (last-resort free fallback) ---
-  'gemini/gemini-2.5-flash',
-  'gemini/gemini-2.5-flash-lite',
-  'gemini/gemini-2.5-pro',
+  'gemini/gemini-3.6-flash',
+  'gemini/gemini-3.5-flash-lite',
+  'gemini/gemini-3.1-pro-preview',
   'gemini/gemini-flash-latest',
 ]
 
@@ -144,15 +144,16 @@ export const NIM_MODELS = [
     tags:        ['Free', 'Lite'],
   },
   // --- Gemini models (Google's Generative AI, free tier) ---
+  // NOTE: Gemini 2.5 models have been deprecated. Using Gemini 3.x instead.
   {
-    id:          'gemini/gemini-2.5-pro',
+    id:          'gemini/gemini-3.1-pro-preview',
     label:       'Pro (Gemini)',
     vendor:      'Gemini',
     description: 'Most capable free Gemini model for complex tasks',
     tags:        ['Free', 'Multimodal', 'Reasoning'],
   },
   {
-    id:          'gemini/gemini-2.5-flash',
+    id:          'gemini/gemini-3.6-flash',
     label:       'Fast (Gemini)',
     vendor:      'Gemini',
     description: 'Balanced Gemini model — speed and quality',
@@ -166,7 +167,7 @@ export const NIM_MODELS = [
     tags:        ['Free', 'Multimodal'],
   },
   {
-    id:          'gemini/gemini-2.5-flash-lite',
+    id:          'gemini/gemini-3.5-flash-lite',
     label:       'Lite (Gemini)',
     vendor:      'Gemini',
     description: 'Fastest, lowest-cost Gemini model for simple tasks',
@@ -202,6 +203,8 @@ export async function streamChatCompletion({
   signal,
   onToken,
   onModelUsed,
+  onSearchStart,
+  onSearchDone,
 }) {
   const url = '/api/chat'
 
@@ -253,7 +256,26 @@ export async function streamChatCompletion({
       if (data === '[DONE]') continue
 
       try {
-        const json   = JSON.parse(data)
+        const json = JSON.parse(data)
+
+        // ── Check for search indicator events (type: "searching" / "search_done")
+        // These are custom SSE events sent by the backend before the
+        // actual chat stream begins. We intercept them and call the
+        // appropriate callbacks, then skip (don't treat as token).
+        if (json.type === 'searching' && json.query) {
+          onSearchStart?.(json.query)
+          continue
+        }
+        if (json.type === 'search_done') {
+          onSearchDone?.(json.resultsCount || 0)
+          continue
+        }
+        if (json.type === 'error' || json.error) {
+          // Backend encountered an error mid-stream
+          const errMsg = json.message || json.error || 'Search failed'
+          throw new Error(errMsg)
+        }
+
         const delta  = json?.choices?.[0]?.delta
         if (!delta) continue
 
