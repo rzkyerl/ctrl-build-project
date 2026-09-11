@@ -36,7 +36,7 @@
      messages: [{role, content}],
      model?:       string,   // default: auto (fallback)
      max_tokens?:  number,   // default: 1024
-     temperature?: number,   // default: 0.7
+     temperature?: number,   // default: 0.2
      seed?:        number,   // default: 0 (NIM only)
      stream?:      boolean,  // default: true
    }
@@ -292,6 +292,17 @@ const SEARCH_KEYWORDS = [
 function detectSearchNeed(userMessage) {
   if (!userMessage || typeof userMessage !== 'string') return null
   const lower = userMessage.toLowerCase()
+
+  // ── Early exit: message is about an uploaded/attached file ──
+  // Patterns like "baca file itu", "analisis dokumen ini", "rangkum file"
+  // are clearly about local context — not a web search request.
+  const FILE_CONTEXT_PATTERNS = [
+    /\b(baca|bacakan|analisis|analisa|rangkum|ringkas|jelaskan|summarize|analyze|read|explain|check|review)\b.{0,30}\b(file|dokumen|document|pdf|doc|gambar|image|foto|foto|lampiran|attachment|ini|itu|tersebut|tadi)\b/i,
+    /\b(file|dokumen|document|pdf|lampiran|attachment)\b.{0,30}\b(ini|itu|tersebut|tadi|yang|diatas|di atas)\b/i,
+    /\bapa (isi|konten|content)\b/i,
+  ]
+  if (FILE_CONTEXT_PATTERNS.some(p => p.test(lower))) return null
+
   const needsSearch = SEARCH_KEYWORDS.some(kw => lower.includes(kw))
   if (!needsSearch) return null
   // Use the user message itself as the query (truncated)
@@ -468,7 +479,7 @@ function buildSearchMessages(provider, finalMessages, searchQuery, searchResults
 
     const body = {
       contents: conversation,
-      generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
+      generationConfig: { maxOutputTokens: 2048, temperature: 0.2 },
     }
     if (sysMsg) {
       body.systemInstruction = {
@@ -565,7 +576,7 @@ export default async function handler(req, res) {
     messages,
     model       = 'auto',
     max_tokens  = 1024,
-    temperature = 0.7,
+    temperature = 0.2,
     seed        = 0,
     stream      = true,
   } = req.body || {}
@@ -585,9 +596,29 @@ export default async function handler(req, res) {
     return `${dateStr}, ${timeStr} (${tz})`
   }
 
-  const SYSTEM_PROMPT = {
-    role: 'system',
-    content: `You are a helpful, knowledgeable AI assistant.
+  function buildSystemPrompt(activeModel, activeProvider) {
+    // Build a human-readable model label for identity responses
+    const providerLabel = {
+      nim:    'NVIDIA NIM',
+      groq:   'Groq',
+      gemini: 'Google Gemini',
+    }[activeProvider] || activeProvider
+
+    const modelLabel = activeModel || 'unknown'
+
+    return {
+      role: 'system',
+      content: `You are Nyx Agent, an AI assistant created by CTRL Build.
+
+**Your identity:**
+- Name: Nyx Agent
+- Model: ${modelLabel}
+- Provider: ${providerLabel}
+- Created by: CTRL Build
+
+When someone asks who you are, what model you use, or about your identity, ALWAYS answer like this example:
+"Saya Nyx Agent, dibuat oleh CTRL Build. Saya menggunakan model ${modelLabel} dari ${providerLabel}."
+Adapt the phrasing naturally to the conversation language (Indonesian or English), but always include your name (Nyx Agent), the model name, and the provider.
 
 **Current date and time: ${getCurrentDateString()}**
 
@@ -595,9 +626,30 @@ When mentioning dates, ALWAYS use this current date as reference. Do NOT invent 
 
 You may be provided with web search results below when the user asks about current events, latest news, recent prices, weather, sports scores, recent disasters, elections, or anything that may have changed after your knowledge cutoff.
 
+**STRICT RULES — ANTI-HALLUCINATION:**
+- If the information is not found in the provided search results, say clearly: "I do not have up-to-date information on this."
+- NEVER invent facts, numbers, dates, or names that are not present in the given context.
+- Do NOT use hedging phrases like "most likely", "probably", "I think", or "it seems" when stating facts. Distinguish opinions from facts.
+- If two sources contradict each other, mention both and tell the user the information is inconsistent.
+
+**HANDLING FILE ATTACHMENTS:**
+When a user uploads or attaches a file (you will see its content in the conversation as "--- File: filename ---"), respond naturally and helpfully about the file:
+- Start with an acknowledgment like "Baik, file **{nama file}** ini berisi tentang..." or "Here's what I found in the file **{filename}**..."
+- Summarize the file content clearly and concisely
+- If the user asks to read, analyze, summarize, or explain the file, base your response ENTIRELY on the provided file content
+- Do NOT trigger web searches or mention external sources when the user is asking about their uploaded file
+- If the file content could not be extracted (shown as "[Could not extract...]" or "[Attached file: ... — content could not be extracted]"), tell the user honestly that the file content could not be read and suggest alternatives (e.g., copy-paste the text, save as a different format)
+- For PDF/DOCX files, provide a structured summary with key points
+- For code files, explain the code's purpose, structure, and any notable patterns
+
 Follow these guidelines:
 
-- When web search results are provided in the system prompt, base your answer on those results and cite the source URLs naturally in your answer.
+- When search results are provided, you MUST cite sources using bracketed numbers after every claim. Example: "Bitcoin is currently priced at $65,000 [1]." or "According to recent reports [2][3], ..."
+- At the end of your answer, you MUST include a sources list in this format:
+  **Sources:**
+  [1] Article Title — https://url.com
+  [2] Article Title — https://url.com
+- Never add a claim from search results without a source number.
 - If no search results are provided or they are not useful, say so honestly and answer with your best knowledge, mentioning that the information may not be up-to-date.
 - Use Markdown for formatting: headings (##, ###), **bold**, *italic*, lists, tables, blockquotes
 - For code snippets, use fenced code blocks with language tags: \`\`\`js, \`\`\`python, \`\`\`bash, etc.
@@ -607,10 +659,14 @@ Follow these guidelines:
 - For long responses, use headings to organize sections
 - Use tables for structured comparisons
 - Keep explanations beginner-friendly unless asked otherwise`,
+    }
   }
 
+  // System prompt is built per-model inside the loop below.
   const hasSystem = messages.some(m => m.role === 'system')
-  const finalMessages = hasSystem ? messages : [SYSTEM_PROMPT, ...messages]
+  // If client supplies their own system prompt, keep messages as-is.
+  // Otherwise, system prompt is built per-model inside the loop below.
+  const finalMessages = messages
 
   // Determine which models to try
   const isAuto = model === 'auto'
@@ -649,9 +705,29 @@ Follow these guidelines:
 
   // Extract last user message for keyword detection fallback
   const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
-  const lastUserText = typeof lastUserMsg?.content === 'string'
-    ? lastUserMsg.content
-    : extractText(lastUserMsg?.content)
+
+  // If the last user message contains file attachments (multipart content
+  // with image_url or --- File: ... --- blocks), skip web search entirely —
+  // the user is asking about their uploaded content, not the web.
+  const lastUserHasFile = Array.isArray(lastUserMsg?.content) && lastUserMsg.content.some(
+    p => p.type === 'image_url' || (p.type === 'text' && p.text?.startsWith('--- File:'))
+  )
+
+  // For keyword detection, extract ONLY the plain text part of the message
+  // (not the file contents). This prevents file content from polluting the
+  // keyword check and triggering false-positive web searches.
+  const lastUserText = (() => {
+    const c = lastUserMsg?.content
+    if (typeof c === 'string') return c
+    if (Array.isArray(c)) {
+      // Only take text parts that are NOT file blocks (--- File: ...)
+      const textParts = c
+        .filter(p => p.type === 'text' && !p.text?.startsWith('--- File:') && !p.text?.startsWith('[Attached file:'))
+        .map(p => p.text || '')
+      return textParts.join(' ').trim()
+    }
+    return ''
+  })()
 
   // ── Pre-search phase (runs once, before trying any model) ──
   // Detect whether the message needs web search and execute it up-front.
@@ -661,13 +737,12 @@ Follow these guidelines:
   // that way the client sees the animation immediately while we wait for
   // search results. The model loop then skips re-setting headers when
   // res.headersSent is already true.
-  let searchContextMessages = finalMessages
   let didSearch = false
   let searchQuery = null
   let searchResult = null
 
   if (hasSearch && stream) {
-    const fallbackQuery = detectSearchNeed(lastUserText)
+    const fallbackQuery = lastUserHasFile ? null : detectSearchNeed(lastUserText)
     if (fallbackQuery) {
       searchQuery = fallbackQuery
       console.log(`[chat] Keyword fallback triggered search: "${searchQuery}"`)
@@ -689,7 +764,7 @@ Follow these guidelines:
         searchResult = { results: [], provider: 'none' }
       }
       console.log(`[chat] Search done — ${searchResult.results.length} results`)
-      searchContextMessages = buildFallbackSearchMessages(finalMessages, searchQuery, searchResult.results)
+      // Store search results separately; they'll be injected per-model below
       didSearch = true
 
       // Tell the client the search is done (stop the searching animation)
@@ -701,10 +776,36 @@ Follow these guidelines:
     const { model: tryModel, provider } = modelsToTry[i]
     const isLast = i === modelsToTry.length - 1
 
+    // Rebuild messages with the correct model identity in the system prompt
+    // for each attempt, so the AI always knows which model it's running on.
+    let messagesForThisAttempt
+    if (!hasSystem) {
+      // Build per-model system prompt with correct identity
+      const sysPrompt = buildSystemPrompt(tryModel, provider)
+      // User-provided messages (no system msg from client)
+      const userTurns = messages
+      if (didSearch && searchResult) {
+        // Inject search context into system prompt and rebuild
+        const searchContext = formatSearchContext(searchQuery, searchResult.results)
+        const sysWithSearch = {
+          ...sysPrompt,
+          content: sysPrompt.content + '\n\n' + searchContext,
+        }
+        messagesForThisAttempt = [sysWithSearch, ...userTurns]
+      } else {
+        messagesForThisAttempt = [sysPrompt, ...userTurns]
+      }
+    } else {
+      // Client supplied their own system prompt — keep as-is with search if needed
+      messagesForThisAttempt = didSearch && searchResult
+        ? buildFallbackSearchMessages(finalMessages, searchQuery, searchResult.results)
+        : finalMessages
+    }
+
     const request = buildProviderRequest({
       provider,
       modelId:   tryModel,
-      finalMessages: searchContextMessages,
+      finalMessages: messagesForThisAttempt,
       opts,
       geminiKey,
       nimKey,

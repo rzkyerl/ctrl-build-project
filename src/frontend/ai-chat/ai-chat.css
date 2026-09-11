@@ -297,11 +297,11 @@
   justify-content: space-between;
   padding: 0 16px;
   border-bottom: none;
-  background: #0e0e0e;
+  background: var(--chat-bg);
 }
 
 [data-ai-theme="light"] .chat-header {
-  background: #f0f0f0;
+  background: var(--chat-bg);
 }
 
 /* ── Circular icon buttons (left hamburger & right ellipsis) ── */
@@ -1234,15 +1234,18 @@
 .chat-stream-cursor {
   display: inline-block;
   width: 2px;
-  height: 1.1em;
+  height: 0.85em;
   background: var(--chat-text);
-  vertical-align: text-bottom;
-  animation: chatBlink 1s steps(2) infinite;
+  vertical-align: middle;
+  margin-left: 1px;
+  border-radius: 1px;
+  animation: chatCursorBlink 0.9s ease-in-out infinite;
+  opacity: 1;
 }
 
-@keyframes chatBlink {
-  0%, 50%  { opacity: 1; }
-  51%, 100% { opacity: 0; }
+@keyframes chatCursorBlink {
+  0%, 45%  { opacity: 1; }
+  55%, 100% { opacity: 0; }
 }
 
 /* ── Search Indicator — shown while web search is running ── */
@@ -1256,6 +1259,26 @@
   border: 1px solid var(--chat-border);
   border-radius: 12px;
   animation: chatSearchSlideIn 0.3s ease;
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.chat-search-indicator.chat-search-indicator-leave {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.chat-search-indicator.is-done {
+  border-color: color-mix(in srgb, #2f9e6b 30%, var(--chat-border));
+}
+
+.chat-search-indicator.is-done .chat-search-indicator-icon {
+  animation: none;
+  color: #2f9e6b;
+  opacity: 1;
+}
+
+.chat-search-indicator.is-done .chat-search-indicator-text {
+  font-style: normal;
 }
 
 @keyframes chatSearchSlideIn {
@@ -1308,6 +1331,19 @@
 .chat-search-indicator-dot:nth-child(2) { animation-delay: 0.16s; }
 .chat-search-indicator-dot:nth-child(3) { animation-delay: 0.32s; }
 
+/* Soft hallucination warning under AI message */
+.chat-halu-warning {
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--chat-text-dim);
+  background: color-mix(in srgb, #c47a20 12%, var(--chat-surface));
+  border: 1px solid color-mix(in srgb, #c47a20 28%, var(--chat-border));
+  border-radius: 8px;
+  animation: chatSearchSlideIn 0.25s ease;
+}
+
 @media (max-width: 768px) {
   .chat-search-indicator {
     margin: 0 16px;
@@ -1316,6 +1352,11 @@
 
   .chat-search-indicator-text {
     font-size: 12px;
+  }
+
+  .chat-halu-warning {
+    font-size: 11px;
+    padding: 7px 10px;
   }
 }
 .chat-msg-actions {
@@ -1853,6 +1894,15 @@
 .chat-file-error {
   font-size: 12px;
   color: var(--chat-danger);
+  padding: 4px 12px;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.chat-file-extracting {
+  font-size: 12px;
+  color: var(--chat-text-dim);
   padding: 4px 12px;
   max-width: 760px;
   width: 100%;

@@ -16,11 +16,30 @@ import { getFileIcon, formatFileSize } from '../constants'
    ChatArea — Message list with auto-scroll + empty state
 ═══════════════════════════════════════════════════ */
 
-export function ChatArea({ messages, isGenerating, isSearching, searchQuery, onSuggestionClick, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
+export function ChatArea({ messages, isGenerating, isSearching, searchDone, searchQuery, haluWarningMsgId, onSuggestionClick, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
   const scrollRef      = useRef(null)
   const bottomRef      = useRef(null)
   const isAtBottom     = useRef(true)   // assume at bottom initially
   const rafRef         = useRef(null)
+  const [indicatorVisible, setIndicatorVisible] = useState(false)
+  const [indicatorLeaving, setIndicatorLeaving] = useState(false)
+
+  /* ── Smooth show/hide for search indicator ── */
+  const showSearchIndicator = isSearching || searchDone
+  useEffect(() => {
+    if (showSearchIndicator) {
+      setIndicatorLeaving(false)
+      setIndicatorVisible(true)
+      return undefined
+    }
+    if (!indicatorVisible) return undefined
+    setIndicatorLeaving(true)
+    const t = setTimeout(() => {
+      setIndicatorVisible(false)
+      setIndicatorLeaving(false)
+    }, 280)
+    return () => clearTimeout(t)
+  }, [showSearchIndicator, indicatorVisible])
 
   /* ── Track whether user is near bottom ── */
   useEffect(() => {
@@ -110,6 +129,7 @@ export function ChatArea({ messages, isGenerating, isSearching, searchQuery, onS
             isGenerating={isGenerating}
             isLastUser={i === lastUserMsgIndex && !isGenerating}
             isStreaming={isGenerating && i === lastAiMsgIndex}
+            showHaluWarning={haluWarningMsgId === msg.id}
             onRegenerate={onRegenerate}
             onCopyMessage={onCopyMessage}
             onLike={onLike}
@@ -117,31 +137,47 @@ export function ChatArea({ messages, isGenerating, isSearching, searchQuery, onS
             onShare={onShare}
           />
         ))}
-        {isSearching && <SearchIndicator query={searchQuery} />}
+        {indicatorVisible && (
+          <SearchIndicator
+            query={searchQuery}
+            done={searchDone && !isSearching}
+            leaving={indicatorLeaving}
+          />
+        )}
         <div ref={bottomRef} style={{ height: 1 }} />
       </div>
     </div>
   )
 }
 
-/* ── Search Indicator — shown while web search is running ── */
-function SearchIndicator({ query }) {
+/* ── Search Indicator — shown while web search is running / wrapping up ── */
+function SearchIndicator({ query, done, leaving }) {
   return (
-    <div className="chat-search-indicator">
+    <div className={`chat-search-indicator${leaving ? ' chat-search-indicator-leave' : ''}${done ? ' is-done' : ''}`}>
       <div className="chat-search-indicator-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
+        {done ? (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        )}
       </div>
       <span className="chat-search-indicator-text">
-        Searching the web for "{query || '...'}"
+        {done
+          ? '✓ Results found — composing answer...'
+          : `🔍 Searching for: "${query || '...'}"`}
       </span>
-      <div className="chat-search-indicator-dots">
-        <span className="chat-search-indicator-dot" />
-        <span className="chat-search-indicator-dot" />
-        <span className="chat-search-indicator-dot" />
-      </div>
+      {!done && (
+        <div className="chat-search-indicator-dots">
+          <span className="chat-search-indicator-dot" />
+          <span className="chat-search-indicator-dot" />
+          <span className="chat-search-indicator-dot" />
+        </div>
+      )}
     </div>
   )
 }
@@ -179,7 +215,7 @@ function FileAttachments({ files }) {
 }
 
 /* ── Single Message ── */
-function Message({ message, isGenerating, isLastUser, isStreaming = false, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
+function Message({ message, isGenerating, isLastUser, isStreaming = false, showHaluWarning = false, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
   const [copied, setCopied]       = useState(false)
   const [showThinking, setShowThinking] = useState(false)
   const [feedback, setFeedback]   = useState(null)
@@ -286,10 +322,9 @@ function Message({ message, isGenerating, isLastUser, isStreaming = false, onReg
         {(message.content || !hasFiles) && (
           <div className={`chat-msg-content${isAI ? ' md-content' : ''}`}>
             {isAI ? (
-              <>
-                <MarkdownRenderer content={message.content} />
-                {isStreaming && hasContent && <span className="chat-stream-cursor" />}
-              </>
+              <div className={isStreaming && hasContent ? 'chat-msg-streaming' : ''}>
+                <MarkdownRenderer content={message.content} isStreaming={isStreaming && hasContent} />
+              </div>
             ) : (
               message.content
             )}
@@ -298,6 +333,13 @@ function Message({ message, isGenerating, isLastUser, isStreaming = false, onReg
 
         {/* File attachments for AI (rare, but supported) */}
         {isAI && hasFiles && <FileAttachments files={message.files} />}
+
+        {/* Soft warning when response likely used internal knowledge */}
+        {isAI && showHaluWarning && hasContent && !isStreaming && (
+          <div className="chat-halu-warning" role="status">
+            ⚠ This answer may be inaccurate — the AI used internal knowledge, not up-to-date data.
+          </div>
+        )}
 
         {/* Message actions */}
         {isAI && hasContent && !isStreaming && (

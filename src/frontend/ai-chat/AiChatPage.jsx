@@ -4,7 +4,7 @@ import { Sidebar }         from './components/Sidebar'
 import { ChatArea }        from './components/ChatArea'
 import { Composer }        from './components/Composer'
 import { useChatSession }  from './hooks/useChatSession'
-import { NIM_MODELS, streamChatCompletion, buildNimMessages } from '../../backend/ai-chat/nimClient'
+import { NIM_MODELS, streamChatCompletion, buildNimMessages, detectHallucinationWarning } from '../../backend/ai-chat/nimClient'
 import './ai-chat.css'
 
 /* ═══════════════════════════════════════════════════
@@ -40,7 +40,9 @@ export default function AiChatPage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [usedModel, setUsedModel]         = useState(null)
   const [isSearching, setIsSearching]     = useState(false)
+  const [searchDone, setSearchDone]       = useState(false)
   const [searchQuery, setSearchQuery]     = useState('')
+  const [haluWarningMsgId, setHaluWarningMsgId] = useState(null)
   const convMenuRef  = useRef(null)
   const renameInputRef = useRef(null)
 
@@ -201,7 +203,9 @@ export default function AiChatPage() {
     setError(null)
     setUsedModel(null)
     setIsSearching(false)
+    setSearchDone(false)
     setSearchQuery('')
+    setHaluWarningMsgId(null)
 
     // Build NIM messages BEFORE adding to state (state updates are async)
     const priorMessages = activeSession?.messages || []
@@ -229,9 +233,12 @@ export default function AiChatPage() {
         messages:    nimMessages,
         model:       selectedModelId,
         maxTokens:   2048,
-        temperature: 0.7,
+        temperature: 0.2,
         signal:      controller.signal,
         onToken: (chunk) => {
+          // First token after search → hide search status indicator
+          setSearchDone(false)
+          setIsSearching(false)
           accumulated += chunk
           updateMessage(sessionId, aiMsg.id, accumulated)
         },
@@ -240,16 +247,23 @@ export default function AiChatPage() {
         },
         onSearchStart: (query) => {
           setSearchQuery(query)
+          setSearchDone(false)
           setIsSearching(true)
         },
         onSearchDone: (_count) => {
           setIsSearching(false)
+          setSearchDone(true)
         },
       })
 
       // If nothing was streamed, show a fallback
       if (accumulated === '' && !controller.signal.aborted) {
         updateMessage(sessionId, aiMsg.id, 'No response received from the AI. Please try again.')
+      }
+
+      // Post-stream hallucination phrase check → soft warning under AI message
+      if (accumulated && detectHallucinationWarning(accumulated)) {
+        setHaluWarningMsgId(aiMsg.id)
       }
 
       // Auto-generate title via AI if session still has default title
@@ -274,6 +288,7 @@ export default function AiChatPage() {
     } finally {
       setIsGenerating(false)
       setIsSearching(false)
+      setSearchDone(false)
       abortRef.current = null
     }
   }, [activeId, activeSession, createSession, addMessage, updateMessage, setIsGenerating, abortRef, selectedModelId, renameSession, sessionsRef, generateTitle])
@@ -285,6 +300,7 @@ export default function AiChatPage() {
     }
     setIsGenerating(false)
     setIsSearching(false)
+    setSearchDone(false)
   }, [abortRef, setIsGenerating])
 
   /* ── Suggestion click ── */
@@ -404,7 +420,9 @@ export default function AiChatPage() {
           messages={messages}
           isGenerating={isGenerating}
           isSearching={isSearching}
+          searchDone={searchDone}
           searchQuery={searchQuery}
+          haluWarningMsgId={haluWarningMsgId}
           onSuggestionClick={handleSuggestionClick}
           onRegenerate={handleRegenerate}
           onLike={handleLike}

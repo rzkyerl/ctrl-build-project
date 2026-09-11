@@ -11,7 +11,7 @@ import { FILE_CONFIG, getFileIcon, formatFileSize, processFile } from '../consta
 
 const FILE_CATEGORIES = [
   { id: 'photos',    label: 'Photos & Images',                  icon: ImageIcon,  accept: 'image/*',                                                                                                                                                    multiple: true },
-  { id: 'documents', label: 'Documents (PDF, TXT, Code, etc.)', icon: FileText,   accept: '.pdf,.txt,.md,.csv,.json,.xml,.html,.css,.js,.jsx,.ts,.tsx,.py,.java,.go,.rs,.rb,.php,.sql,.yaml,.yml,.toml,.ini,.sh,.bat', multiple: true },
+  { id: 'documents', label: 'Documents (PDF, DOCX, TXT, Code)', icon: FileText,   accept: '.pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.txt,.md,.csv,.json,.xml,.html,.css,.js,.jsx,.ts,.tsx,.py,.java,.go,.rs,.rb,.php,.sql,.yaml,.yml,.toml,.ini,.sh,.bat', multiple: true },
   { id: 'any',       label: 'Any file',                         icon: Paperclip,  accept: FILE_CONFIG.accept,                                                                                                                                           multiple: true },
 ]
 
@@ -53,6 +53,7 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
   const [files, setFiles]               = useState([])
   const [isDragging, setIsDragging]     = useState(false)
   const [fileError, setFileError]       = useState(null)
+  const [isExtracting, setIsExtracting] = useState(false)
   const [activeMenu, setActiveMenu]     = useState(null) // 'file' | 'model' | 'tools' | null
   const [fileAccept, setFileAccept]     = useState(FILE_CONFIG.accept)
   const [fileMultiple, setFileMultiple] = useState(true)
@@ -134,9 +135,14 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
       return true
     })
     if (validFiles.length === 0) return
-    const processed = await Promise.all(validFiles.map(f => processFile(f).catch(() => null)))
-    const valid = processed.filter(Boolean)
-    if (valid.length > 0) setFiles(prev => [...prev, ...valid])
+    setIsExtracting(true)
+    try {
+      const processed = await Promise.all(validFiles.map(f => processFile(f).catch(() => null)))
+      const valid = processed.filter(Boolean)
+      if (valid.length > 0) setFiles(prev => [...prev, ...valid])
+    } finally {
+      setIsExtracting(false)
+    }
   }, [files.length])
 
   const removeFile    = useCallback((id) => setFiles(prev => prev.filter(f => f.id !== id)), [])
@@ -153,7 +159,7 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
   }, [addFiles])
 
   /* ── Send ── */
-  const canSend = (value.trim().length > 0 || files.length > 0) && !isGenerating
+  const canSend = (value.trim().length > 0 || files.length > 0) && !isGenerating && !isExtracting
   const handleSend = useCallback(() => {
     if (!canSend) return
     onSend(value.trim(), files.length > 0 ? files : undefined)
@@ -194,6 +200,8 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
             ))}
           </div>
         )}
+
+        {isExtracting && <div className="chat-file-extracting">Extracting...</div>}
 
         {fileError && <div className="chat-file-error">{fileError}</div>}
 

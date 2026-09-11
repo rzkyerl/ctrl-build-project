@@ -106,16 +106,28 @@ marked.use({ renderer })
    sanitized HTML with syntax-highlighted code blocks
 ═══════════════════════════════════════════════════ */
 
-export function MarkdownRenderer({ content }) {
+export function MarkdownRenderer({ content, isStreaming = false }) {
   const containerRef = useRef(null)
 
-  const html = useCallback((md) => {
+  const html = useCallback((md, streaming) => {
     if (!md) return ''
     try {
       const raw = marked.parse(md, { async: false })
-      return DOMPurify.sanitize(raw, {
+      const sanitized = DOMPurify.sanitize(raw, {
         ADD_ATTR: ['data-code', 'target', 'rel'],
+        ADD_TAGS: ['span'],
       })
+      if (!streaming) return sanitized
+
+      // Inject cursor span inside the last closing block tag
+      // so it appears inline at the end of the last paragraph/li/heading
+      const CURSOR = '<span class="chat-stream-cursor"></span>'
+      const match = sanitized.match(/([\s\S]*)(<\/(?:p|li|h[1-6]|td|blockquote)>)\s*$/)
+      if (match) {
+        return match[1] + CURSOR + match[2]
+      }
+      // Fallback: append after all content
+      return sanitized + CURSOR
     } catch {
       return DOMPurify.sanitize(md)
     }
@@ -178,7 +190,7 @@ export function MarkdownRenderer({ content }) {
     <div
       ref={containerRef}
       className="md-body"
-      dangerouslySetInnerHTML={{ __html: html(content) }}
+      dangerouslySetInnerHTML={{ __html: html(content, isStreaming) }}
     />
   )
 }

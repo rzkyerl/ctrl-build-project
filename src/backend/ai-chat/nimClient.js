@@ -189,7 +189,7 @@ export const DEFAULT_MODEL = NIM_MODELS[0]
  * @param {Array}    params.messages    — [{role, content}]
  * @param {string}   params.model       — model ID (default: 'auto')
  * @param {number}   params.maxTokens   — max output tokens (default: 1024)
- * @param {number}   params.temperature — 0–1 (default: 0.7)
+ * @param {number}   params.temperature — 0–1 (default: 0.2)
  * @param {AbortSignal} params.signal   — for cancellation
  * @param {Function} params.onToken     — callback(chunk) for each token
  * @returns {Promise<string>} full response text
@@ -198,7 +198,7 @@ export async function streamChatCompletion({
   messages,
   model       = DEFAULT_MODEL.id,
   maxTokens   = 1024,
-  temperature = 0.7,
+  temperature = 0.2,
   seed        = 0,
   signal,
   onToken,
@@ -349,4 +349,28 @@ export function buildNimMessages(messages) {
     // Plain text message
     return { role: msg.role, content: msg.content }
   })
+}
+
+/* ── Hallucination phrase detection (post-stream warning) ── */
+const HALLUCINATION_PHRASES = [
+  /berdasarkan pengetahuan saya hingga/i,
+  /berdasarkan data pelatihan saya/i,
+  /saya tidak memiliki akses ke internet/i,
+  /sebagai model bahasa/i,
+  /sebagai AI, saya tidak bisa/i,
+  /saya rasa mungkin/i,
+  /kemungkinan besar adalah/i,
+  /i don't have access to real-time/i,
+  /as of my knowledge cutoff/i,
+  /my training data suggests/i,
+  /i cannot browse the internet/i,
+]
+
+/**
+ * Returns true if the final assistant text contains phrases that suggest
+ * the model fell back to internal/training knowledge instead of search data.
+ */
+export function detectHallucinationWarning(text) {
+  if (!text || typeof text !== 'string') return false
+  return HALLUCINATION_PHRASES.some((re) => re.test(text))
 }

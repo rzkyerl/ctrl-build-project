@@ -160,10 +160,28 @@ function getCurrentDateString() {
   return `${dateStr}, ${timeStr} (${tz})`
 }
 
-function buildSystemPrompt() {
+function buildSystemPrompt(activeModel, activeProvider) {
+  const providerLabel = {
+    nim:    'NVIDIA NIM',
+    groq:   'Groq',
+    gemini: 'Google Gemini',
+  }[activeProvider] || (activeProvider || 'AI')
+
+  const modelLabel = activeModel || 'unknown'
+
   return {
     role: 'system',
-    content: `You are a helpful, knowledgeable AI assistant.
+    content: `You are Nyx Agent, an AI assistant created by CTRL Build.
+
+**Your identity:**
+- Name: Nyx Agent
+- Model: ${modelLabel}
+- Provider: ${providerLabel}
+- Created by: CTRL Build
+
+When someone asks who you are, what model you use, or about your identity, ALWAYS answer like this example:
+"Saya Nyx Agent, dibuat oleh CTRL Build. Saya menggunakan model ${modelLabel} dari ${providerLabel}."
+Adapt the phrasing naturally to the conversation language (Indonesian or English), but always include your name (Nyx Agent), the model name, and the provider.
 
 **Current date and time: ${getCurrentDateString()}**
 
@@ -171,9 +189,30 @@ When mentioning dates, ALWAYS use this current date as reference. Do NOT invent 
 
 You may be provided with web search results below when the user asks about current events, latest news, recent prices, weather, sports scores, recent disasters, elections, or anything that may have changed after your knowledge cutoff.
 
+**STRICT RULES — ANTI-HALLUCINATION:**
+- If the information is not found in the provided search results, say clearly: "I do not have up-to-date information on this."
+- NEVER invent facts, numbers, dates, or names that are not present in the given context.
+- Do NOT use hedging phrases like "most likely", "probably", "I think", or "it seems" when stating facts. Distinguish opinions from facts.
+- If two sources contradict each other, mention both and tell the user the information is inconsistent.
+
+**HANDLING FILE ATTACHMENTS:**
+When a user uploads or attaches a file (you will see its content in the conversation as "--- File: filename ---"), respond naturally and helpfully about the file:
+- Start with an acknowledgment like "Baik, file **{nama file}** ini berisi tentang..." or "Here's what I found in the file **{filename}**..."
+- Summarize the file content clearly and concisely
+- If the user asks to read, analyze, summarize, or explain the file, base your response ENTIRELY on the provided file content
+- Do NOT trigger web searches or mention external sources when the user is asking about their uploaded file
+- If the file content could not be extracted (shown as "[Could not extract...]" or "[Attached file: ... — content could not be extracted]"), tell the user honestly that the file content could not be read and suggest alternatives (e.g., copy-paste the text, save as a different format)
+- For PDF/DOCX files, provide a structured summary with key points
+- For code files, explain the code's purpose, structure, and any notable patterns
+
 Follow these guidelines:
 
-- When web search results are provided in the system prompt, base your answer on those results and cite the source URLs naturally in your answer.
+- When search results are provided, you MUST cite sources using bracketed numbers after every claim. Example: "Bitcoin is currently priced at $65,000 [1]." or "According to recent reports [2][3], ..."
+- At the end of your answer, you MUST include a sources list in this format:
+  **Sources:**
+  [1] Article Title — https://url.com
+  [2] Article Title — https://url.com
+- Never add a claim from search results without a source number.
 - If no search results are provided or they are not useful, say so honestly and answer with your best knowledge, mentioning that the information may not be up-to-date.
 - Use Markdown for formatting: headings (##, ###), **bold**, *italic*, lists, tables, blockquotes
 - For code snippets, use fenced code blocks with language tags: \`\`\`js, \`\`\`python, \`\`\`bash, etc.
@@ -228,7 +267,7 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
     messages,
     model       = 'auto',
     max_tokens  = 1024,
-    temperature = 0.7,
+    temperature = 0.2,
     seed        = 0,
     stream      = true,
   } = body || {}
@@ -239,9 +278,10 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
     return res.end(JSON.stringify({ error: 'Messages array is required' }))
   }
 
-  // Inject system prompt
+  // System prompt is built per-model in the loop below (with correct model identity).
   const hasSystem = messages.some(m => m.role === 'system')
-  const finalMessages = hasSystem ? messages : [buildSystemPrompt(), ...messages]
+  // finalMessages = raw messages from client (no system prompt added yet)
+  const finalMessages = messages
 
   const isAuto = model === 'auto'
   let modelsToTry
@@ -289,9 +329,29 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
 
   // Extract last user message for keyword detection fallback
   const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
-  const lastUserText = typeof lastUserMsg?.content === 'string'
-    ? lastUserMsg.content
-    : extractText(lastUserMsg?.content)
+
+  // If the last user message contains file attachments (multipart content
+  // with image_url or --- File: ... --- blocks), skip web search entirely —
+  // the user is asking about their uploaded content, not the web.
+  const lastUserHasFile = Array.isArray(lastUserMsg?.content) && lastUserMsg.content.some(
+    p => p.type === 'image_url' || (p.type === 'text' && p.text?.startsWith('--- File:'))
+  )
+
+  // For keyword detection, extract ONLY the plain text part of the message
+  // (not the file contents). This prevents file content from polluting the
+  // keyword check and triggering false-positive web searches.
+  const lastUserText = (() => {
+    const c = lastUserMsg?.content
+    if (typeof c === 'string') return c
+    if (Array.isArray(c)) {
+      // Only take text parts that are NOT file blocks (--- File: ...)
+      const textParts = c
+        .filter(p => p.type === 'text' && !p.text?.startsWith('--- File:') && !p.text?.startsWith('[Attached file:'))
+        .map(p => p.text || '')
+      return textParts.join(' ').trim()
+    }
+    return ''
+  })()
 
   // ── Pre-search phase (runs once, before trying any model) ──
   // Detect whether the message likely needs web search and execute it
@@ -300,14 +360,14 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
   // indicator to the client, but we DO NOT commit the SSE headers until
   // a model actually starts streaming its answer — that way we can still
   // fallback to the next model if the current one fails.
-  let searchContextMessages = finalMessages
   let didSearch = false
   let searchQuery = null
   let searchResult = null
 
   if (hasSearch && stream) {
     // 1) Keyword detection (deterministic, works for all providers)
-    const fallbackQuery = detectSearchNeed(lastUserText)
+    // Skip search entirely if user attached files — they're asking about local content
+    const fallbackQuery = lastUserHasFile ? null : detectSearchNeed(lastUserText)
     if (fallbackQuery) {
       searchQuery = fallbackQuery
       console.log(`[dev-api] Keyword fallback triggered search: "${searchQuery}"`)
@@ -330,9 +390,6 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
         searchResult = { results: [], provider: 'none' }
       }
       console.log(`[dev-api] Search done — ${searchResult.results.length} results`)
-      searchContextMessages = buildFallbackSearchMessages(
-        finalMessages, searchQuery, searchResult.results
-      )
       didSearch = true
 
       // Tell the client the search is done (stop the searching animation)
@@ -357,8 +414,26 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
     // For streaming: if headers already sent, we can still stream —
     // just can't fallback to another model if this one fails mid-stream.
 
+    // Build messages with correct model identity in system prompt
+    let messagesForThisAttempt
+    if (!hasSystem) {
+      const sysPrompt = buildSystemPrompt(tryModel, provider)
+      if (didSearch && searchResult) {
+        const searchContext = formatSearchContext(searchQuery, searchResult.results)
+        const sysWithSearch = { ...sysPrompt, content: sysPrompt.content + '\n\n' + searchContext }
+        messagesForThisAttempt = [sysWithSearch, ...messages]
+      } else {
+        messagesForThisAttempt = [sysPrompt, ...messages]
+      }
+    } else {
+      // Client supplied their own system prompt
+      messagesForThisAttempt = didSearch && searchResult
+        ? buildFallbackSearchMessages(finalMessages, searchQuery, searchResult.results)
+        : finalMessages
+    }
+
     // Build the request — use search-augmented messages if we searched
-    const reqBody = buildRequestBody(provider, tryModel, searchContextMessages, opts)
+    const reqBody = buildRequestBody(provider, tryModel, messagesForThisAttempt, opts)
 
     let apiUrl
     let headers
@@ -510,7 +585,7 @@ function formatSearchContext(query, results) {
     const dateStr = r.date ? ` — ${r.date}` : ''
     return `${i + 1}. ${r.title}\n   URL: ${r.url}${dateStr}\n   ${r.snippet}`
   })
-  return `[Tool Result — web_search]\nQuery: "${query}"\n\n${lines.join('\n\n')}\n\n[End of search results — cite sources in your answer]\n\nIMPORTANT: The dates shown next to search results are the publication dates of those articles/pages, NOT today's date. Always use the current date from the system prompt above when referring to "today". Do not echo dates from search results as the current date.`
+  return `[Web Search Results — MUST cite source numbers [1], [2], etc. for every claim]\nQuery: "${query}"\n\n${lines.join('\n\n')}\n\n[End of search results — cite sources using [1], [2], etc.]\n\nIMPORTANT: The dates shown next to search results are the publication dates of those articles/pages, NOT today's date. Always use the current date from the system prompt above when referring to "today". Do not echo dates from search results as the current date.`
 }
 
 async function executeSearch(query) {
@@ -635,6 +710,17 @@ const SEARCH_KEYWORDS = [
 function detectSearchNeed(userMessage) {
   if (!userMessage || typeof userMessage !== 'string') return null
   const lower = userMessage.toLowerCase()
+
+  // ── Early exit: message is about an uploaded/attached file ──
+  // Patterns like "baca file itu", "analisis dokumen ini", "rangkum file"
+  // are clearly about local context — not a web search request.
+  const FILE_CONTEXT_PATTERNS = [
+    /\b(baca|bacakan|analisis|analisa|rangkum|ringkas|jelaskan|summarize|analyze|read|explain|check|review)\b.{0,30}\b(file|dokumen|document|pdf|doc|gambar|image|foto|foto|lampiran|attachment|ini|itu|tersebut|tadi)\b/i,
+    /\b(file|dokumen|document|pdf|lampiran|attachment)\b.{0,30}\b(ini|itu|tersebut|tadi|yang|diatas|di atas)\b/i,
+    /\bapa (isi|konten|content)\b/i,
+  ]
+  if (FILE_CONTEXT_PATTERNS.some(p => p.test(lower))) return null
+
   const needsSearch = SEARCH_KEYWORDS.some(kw => lower.includes(kw))
   if (!needsSearch) return null
   return userMessage.slice(0, 200)
