@@ -15,7 +15,7 @@
      messages: [{role, content}],
      model?:   string,   // default: meta/llama-3.3-70b-instruct
      max_tokens?:   number,   // default: 1024
-     temperature?:  number,   // default: 0.7
+     temperature?:  number,   // default: 0.2
      stream?:       boolean,  // default: true
    }
 
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     messages,
     model       = 'moonshotai/kimi-k3',
     max_tokens  = 1024,
-    temperature = 0.7,
+    temperature = 0.2,
     seed        = 0,
     stream      = true,
   } = req.body || {}

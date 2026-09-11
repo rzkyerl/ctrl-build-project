@@ -20,8 +20,10 @@ export const SIDEBAR_WIDTH = 260
 export const FILE_CONFIG = {
   maxFiles:       5,
   maxSizeBytes:   10 * 1024 * 1024,  // 10 MB per file
-  accept:         'image/*,.pdf,.txt,.md,.csv,.json,.xml,.html,.css,.js,.jsx,.ts,.tsx,.py,.java,.go,.rs,.rb,.php,.sql,.yaml,.yml,.toml,.ini,.sh,.bat',
+  accept:         'image/*,.pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.txt,.md,.csv,.json,.xml,.html,.css,.js,.jsx,.ts,.tsx,.py,.java,.go,.rs,.rb,.php,.sql,.yaml,.yml,.toml,.ini,.sh,.bat',
 }
+
+const MAX_EXTRACTED_CHARS = 50000
 
 /** File type categorization */
 export function getFileType(file) {
@@ -30,6 +32,23 @@ export function getFileType(file) {
 
   if (mime.startsWith('image/')) return 'image'
   if (mime === 'application/pdf' || name.endsWith('.pdf')) return 'pdf'
+  if (
+    name.endsWith('.docx') ||
+    mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) return 'docx'
+  if (name.endsWith('.doc') || mime === 'application/msword') return 'doc'
+  if (
+    name.endsWith('.xlsx') ||
+    name.endsWith('.xls') ||
+    mime.includes('spreadsheet') ||
+    mime === 'application/vnd.ms-excel'
+  ) return 'xlsx'
+  if (
+    name.endsWith('.pptx') ||
+    name.endsWith('.ppt') ||
+    mime.includes('presentation') ||
+    mime === 'application/vnd.ms-powerpoint'
+  ) return 'pptx'
   return 'text'
 }
 
@@ -38,6 +57,10 @@ export function getFileIcon(fileType) {
   switch (fileType) {
     case 'image': return '\u{1F4CE}'
     case 'pdf':   return '\u{1F4D1}'
+    case 'docx':
+    case 'doc':   return '\u{1F4C4}'
+    case 'xlsx':  return '\u{1F4CA}'
+    case 'pptx':  return '\u{1F4CA}'
     default:     return '\u{1F4C4}'
   }
 }
@@ -62,6 +85,54 @@ export function readImageAsDataUrl(file) {
   })
 }
 
+function truncateExtracted(text) {
+  if (!text || text.length <= MAX_EXTRACTED_CHARS) return text
+  return text.slice(0, MAX_EXTRACTED_CHARS) + '\n\n[... file truncated ...]'
+}
+
+/** Extract plain text from a PDF via pdfjs-dist (lazy-loaded) */
+export async function extractPdfText(file) {
+  const [pdfjs, workerMod] = await Promise.all([
+    import('pdfjs-dist'),
+    import('pdfjs-dist/build/pdf.worker.mjs?url'),
+  ])
+  pdfjs.GlobalWorkerOptions.workerSrc = workerMod.default
+
+  const data = new Uint8Array(await file.arrayBuffer())
+  const pdf = await pdfjs.getDocument({ data }).promise
+  const pages = []
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    const pageText = content.items
+      .map((item) => ('str' in item ? item.str : ''))
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (pageText) pages.push(pageText)
+  }
+
+  const text = pages.join('\n\n').trim()
+  if (!text) {
+    throw new Error('PDF contained no extractable text')
+  }
+  return text
+}
+
+/** Extract plain text from a DOCX via mammoth (lazy-loaded) */
+export async function extractDocxText(file) {
+  const mammothMod = await import('mammoth')
+  const mammoth = mammothMod.default ?? mammothMod
+  const arrayBuffer = await file.arrayBuffer()
+  const result = await mammoth.extractRawText({ arrayBuffer })
+  const text = (result.value || '').trim()
+  if (!text) {
+    throw new Error('DOCX contained no extractable text')
+  }
+  return text
+}
+
 /**
  * Process a file into internal format for messages.
  * Returns { id, name, size, type, dataUrl?, extractedText? }
@@ -75,20 +146,32 @@ export async function processFile(file) {
     type: fileType,
   }
 
-  if (fileType === 'image') {
-    base.dataUrl = await readImageAsDataUrl(file)
-  } else {
-    // Read text content for PDFs and text files
-    // Note: PDFs won't have extractable text via FileReader, but text-based files will
-    try {
-      base.extractedText = await readTextFile(file)
-      // Truncate very large text files
-      if (base.extractedText.length > 50000) {
-        base.extractedText = base.extractedText.slice(0, 50000) + '\n\n[... file truncated ...]'
-      }
-    } catch {
-      base.extractedText = `[Could not read file content: ${file.name}]`
+  try {
+    switch (fileType) {
+      case 'image':
+        base.dataUrl = await readImageAsDataUrl(file)
+        break
+      case 'pdf':
+        base.extractedText = truncateExtracted(await extractPdfText(file))
+        break
+      case 'docx':
+        base.extractedText = truncateExtracted(await extractDocxText(file))
+        break
+      case 'doc':
+        base.extractedText = `[Could not extract text from "${file.name}" — .doc (legacy Word) is not supported. Save as .docx or paste the text.]`
+        break
+      case 'xlsx':
+        base.extractedText = `[File Excel: ${file.name} — konten tidak bisa diekstrak. Salin teks secara manual.]`
+        break
+      case 'pptx':
+        base.extractedText = `[File PowerPoint: ${file.name} — konten tidak bisa diekstrak. Salin teks secara manual.]`
+        break
+      default:
+        base.extractedText = truncateExtracted(await readTextFile(file))
+        break
     }
+  } catch {
+    base.extractedText = `[Could not read file content: ${file.name}]`
   }
 
   return base

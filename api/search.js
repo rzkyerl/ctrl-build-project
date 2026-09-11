@@ -187,7 +187,7 @@ export function formatSearchContext(query, results) {
     return `${i + 1}. ${r.title}\n   URL: ${r.url}${dateStr}\n   ${r.snippet}`
   })
 
-  return `[Tool Result — web_search]\nQuery: "${query}"\n\n${lines.join('\n\n')}\n\n[End of search results — cite sources in your answer]\n\nIMPORTANT: The dates shown next to search results are the publication dates of those articles/pages, NOT today's date. Always use the current date from the system prompt above when referring to "today". Do not echo dates from search results as the current date.`
+  return `[Web Search Results — MUST cite source numbers [1], [2], etc. for every claim]\nQuery: "${query}"\n\n${lines.join('\n\n')}\n\n[End of search results — cite sources using [1], [2], etc.]\n\nIMPORTANT: The dates shown next to search results are the publication dates of those articles/pages, NOT today's date. Always use the current date from the system prompt above when referring to "today". Do not echo dates from search results as the current date.`
 }
 
 /* ── Vercel serverless handler ── */
