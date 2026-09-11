@@ -39,6 +39,8 @@ export default function AiChatPage() {
   const [renameValue, setRenameValue]     = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [usedModel, setUsedModel]         = useState(null)
+  const [isSearching, setIsSearching]     = useState(false)
+  const [searchQuery, setSearchQuery]     = useState('')
   const convMenuRef  = useRef(null)
   const renameInputRef = useRef(null)
 
@@ -198,6 +200,8 @@ export default function AiChatPage() {
 
     setError(null)
     setUsedModel(null)
+    setIsSearching(false)
+    setSearchQuery('')
 
     // Build NIM messages BEFORE adding to state (state updates are async)
     const priorMessages = activeSession?.messages || []
@@ -218,9 +222,9 @@ export default function AiChatPage() {
     const controller = new AbortController()
     abortRef.current = controller
 
-    try {
-      let accumulated = ''
+    let accumulated = ''
 
+    try {
       await streamChatCompletion({
         messages:    nimMessages,
         model:       selectedModelId,
@@ -233,6 +237,13 @@ export default function AiChatPage() {
         },
         onModelUsed: (modelId) => {
           setUsedModel(modelId)
+        },
+        onSearchStart: (query) => {
+          setSearchQuery(query)
+          setIsSearching(true)
+        },
+        onSearchDone: (_count) => {
+          setIsSearching(false)
         },
       })
 
@@ -253,10 +264,16 @@ export default function AiChatPage() {
         // User clicked stop - keep whatever was streamed
       } else {
         console.error('NIM streaming error:', err)
-        setError('Something went wrong. The AI couldn\'t generate a reply.')
+        const errorMsg = err.message || 'Something went wrong. The AI couldn\'t generate a reply.'
+        setError(errorMsg)
+        // Show the error inline if the model didn't stream anything
+        if (accumulated === '') {
+          updateMessage(sessionId, aiMsg.id, errorMsg)
+        }
       }
     } finally {
       setIsGenerating(false)
+      setIsSearching(false)
       abortRef.current = null
     }
   }, [activeId, activeSession, createSession, addMessage, updateMessage, setIsGenerating, abortRef, selectedModelId, renameSession, sessionsRef, generateTitle])
@@ -267,6 +284,7 @@ export default function AiChatPage() {
       abortRef.current.abort()
     }
     setIsGenerating(false)
+    setIsSearching(false)
   }, [abortRef, setIsGenerating])
 
   /* ── Suggestion click ── */
@@ -385,6 +403,8 @@ export default function AiChatPage() {
         <ChatArea
           messages={messages}
           isGenerating={isGenerating}
+          isSearching={isSearching}
+          searchQuery={searchQuery}
           onSuggestionClick={handleSuggestionClick}
           onRegenerate={handleRegenerate}
           onLike={handleLike}

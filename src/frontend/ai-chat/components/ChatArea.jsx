@@ -16,7 +16,7 @@ import { getFileIcon, formatFileSize } from '../constants'
    ChatArea — Message list with auto-scroll + empty state
 ═══════════════════════════════════════════════════ */
 
-export function ChatArea({ messages, isGenerating, onSuggestionClick, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
+export function ChatArea({ messages, isGenerating, isSearching, searchQuery, onSuggestionClick, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
   const scrollRef      = useRef(null)
   const bottomRef      = useRef(null)
   const isAtBottom     = useRef(true)   // assume at bottom initially
@@ -117,7 +117,30 @@ export function ChatArea({ messages, isGenerating, onSuggestionClick, onRegenera
             onShare={onShare}
           />
         ))}
+        {isSearching && <SearchIndicator query={searchQuery} />}
         <div ref={bottomRef} style={{ height: 1 }} />
+      </div>
+    </div>
+  )
+}
+
+/* ── Search Indicator — shown while web search is running ── */
+function SearchIndicator({ query }) {
+  return (
+    <div className="chat-search-indicator">
+      <div className="chat-search-indicator-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+      </div>
+      <span className="chat-search-indicator-text">
+        Searching the web for "{query || '...'}"
+      </span>
+      <div className="chat-search-indicator-dots">
+        <span className="chat-search-indicator-dot" />
+        <span className="chat-search-indicator-dot" />
+        <span className="chat-search-indicator-dot" />
       </div>
     </div>
   )

@@ -53,7 +53,7 @@ Content-Type: application/json
 Body:
 {
   "messages": [{"role": "user", "content": "Hello"}],
-  "model": "gemini/gemini-2.5-flash",   // or "auto", or any listed below
+  "model": "gemini/gemini-3.6-flash",   // or "auto", or any listed below
   "max_tokens": 1024,
   "temperature": 0.7,
   "stream": true
@@ -95,10 +95,10 @@ In `auto` mode the proxy tries NIM first, then Groq, then Gemini.
 - `groq/groq/compound-mini`
 
 #### Google Gemini (free tier — has stricter RPM limits)
-- `gemini/gemini-2.5-pro`
-- `gemini/gemini-2.5-flash`
+- `gemini/gemini-3.1-pro-preview`
+- `gemini/gemini-3.6-flash`
 - `gemini/gemini-flash-latest`
-- `gemini/gemini-2.5-flash-lite`
+- `gemini/gemini-3.5-flash-lite`
 
 ## Security Notes
 

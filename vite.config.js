@@ -6,8 +6,22 @@ import { devApiProxy } from './vite-dev-api.js'
 export default defineConfig(({ mode }) => {
   // Load all env vars (including non-VITE_ prefixed) into process.env
   const env = loadEnv(mode, process.cwd(), '')
-  // Make NVIDIA_NIM_API_KEY available to the dev middleware
+  // Make backend-only API keys available to the dev middleware.
+  // Also accept common alias names (e.g. GOOGLE_GEMINI_API_KEY).
   process.env.NVIDIA_NIM_API_KEY = env.NVIDIA_NIM_API_KEY
+  process.env.GROQ_API_KEY      = env.GROQ_API_KEY
+  process.env.GEMINI_API_KEY    = env.GEMINI_API_KEY || env.GOOGLE_GEMINI_API_KEY
+  process.env.LANGSEARCH_API_KEY = env.LANGSEARCH_API_KEY
+  process.env.SERPER_API_KEY     = env.SERPER_API_KEY
+  // In dev, always treat .env.local as having higher priority than .env
+  const localEnv = loadEnv(mode, process.cwd(), '')
+  if (localEnv.NVIDIA_NIM_API_KEY) process.env.NVIDIA_NIM_API_KEY = localEnv.NVIDIA_NIM_API_KEY
+  if (localEnv.GROQ_API_KEY)      process.env.GROQ_API_KEY      = localEnv.GROQ_API_KEY
+  if (localEnv.GEMINI_API_KEY || localEnv.GOOGLE_GEMINI_API_KEY) {
+    process.env.GEMINI_API_KEY = localEnv.GEMINI_API_KEY || localEnv.GOOGLE_GEMINI_API_KEY
+  }
+  if (localEnv.LANGSEARCH_API_KEY) process.env.LANGSEARCH_API_KEY = localEnv.LANGSEARCH_API_KEY
+  if (localEnv.SERPER_API_KEY)    process.env.SERPER_API_KEY    = localEnv.SERPER_API_KEY
 
   return {
     plugins: [react(), devApiProxy()],
