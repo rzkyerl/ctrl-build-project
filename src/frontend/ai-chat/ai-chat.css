@@ -1268,12 +1268,12 @@
 }
 
 .chat-search-indicator.is-done {
-  border-color: color-mix(in srgb, #2f9e6b 30%, var(--chat-border));
+  border-color: color-mix(in srgb, var(--chat-text-dim) 30%, var(--chat-border));
 }
 
 .chat-search-indicator.is-done .chat-search-indicator-icon {
   animation: none;
-  color: #2f9e6b;
+  color: var(--chat-text-dim);
   opacity: 1;
 }
 

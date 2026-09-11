@@ -168,8 +168,8 @@ function SearchIndicator({ query, done, leaving }) {
       </div>
       <span className="chat-search-indicator-text">
         {done
-          ? '✓ Results found — composing answer...'
-          : `🔍 Searching for: "${query || '...'}"`}
+          ? 'Results found, composing answer...'
+          : `Searching for: "${query || '...'}"`}
       </span>
       {!done && (
         <div className="chat-search-indicator-dots">
