@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Upload, X } from 'lucide-react'
-import { sanityClient }          from '../../../../backend/lib/sanity'
 import { FeatureList, Feature }  from '../../components/FeatureList'
 import { StackSelect }           from '../../components/StackSelect'
 import { PortfolioPreview }      from '../../components/PortfolioPreview'
@@ -34,31 +33,25 @@ const PortfolioEdit: React.FC = () => {
 
   useEffect(() => {
     if (!id) return
-    sanityClient.fetch(`
-      *[_type == "portfolio" && _id == $id][0] {
-        _id, title, slug, category, overview, goals,
-        features, architecture, link,
-        "imageUrl": image.asset->url,
-        "techStackIds": techStack[]->_id,
-        "techStackNames": techStack[]->name
-      }
-    `, { id })
-    .then((data: any) => {
-      if (!data) return
-      setTitle(data.title || '')
-      setSlug(data.slug?.current || '')
-      setCategory(data.category || CATEGORIES[0])
-      setImagePreview(data.imageUrl || '')
-      setOverview(data.overview || '')
-      setGoals(data.goals || '')
-      setFeatures(Array.isArray(data.features) ? data.features : [])
-      setArchitecture(data.architecture || '')
-      setTechStack(data.techStackIds || [])
-      setStackNames(data.techStackNames || [])
-      setLink(data.link || '')
-    })
-    .catch(() => setError('Failed to load portfolio.'))
-    .finally(() => setFetching(false))
+    fetch(`/api/portfolios/${id}`)
+      .then(res => res.json())
+      .then(body => {
+        if (!body.success) throw new Error(body.error || 'Portfolio not found.')
+        const d = body.data
+        setTitle(d.title || '')
+        setSlug(d.slug?.current || '')
+        setCategory(d.category || CATEGORIES[0])
+        setImagePreview(d.imageUrl || '')
+        setOverview(d.overview || '')
+        setGoals(d.goals || '')
+        setFeatures(Array.isArray(d.features) ? d.features : [])
+        setArchitecture(d.architecture || '')
+        setTechStack((d.techStack || []).map((t: any) => t._id))
+        setStackNames((d.techStack || []).map((t: any) => t.name))
+        setLink(d.link || '')
+      })
+      .catch(() => setError('Unable to load portfolio data from Sanity.'))
+      .finally(() => setFetching(false))
   }, [id])
 
   const handleImageChange = (file: File) => {
@@ -85,7 +78,8 @@ const PortfolioEdit: React.FC = () => {
       if (imageFile) formData.append('image', imageFile)
 
       const res = await fetch(`/api/portfolios/${id}`, { method: 'PATCH', body: formData })
-      if (!res.ok) throw new Error(await res.text())
+      const body = await res.json()
+      if (!res.ok || !body.success) throw new Error(body.error || 'Failed to update portfolio.')
       navigate(`/admin/portfolios/${id}`)
     } catch (err: any) {
       setError(err.message || 'Failed to update portfolio.')
@@ -94,98 +88,98 @@ const PortfolioEdit: React.FC = () => {
     }
   }
 
-  if (fetching) return <div className="ad-loading">LOADING...</div>
+  if (fetching) return <div className="cb-portfolio-loading">LOADING...</div>
 
   return (
     <div>
-      <div className="ad-page-header">
+      <div className="cb-portfolio-page-header">
         <div>
-          <h1 className="ad-page-title">Edit Portfolio</h1>
-          <p className="ad-page-subtitle">{title}</p>
+          <h1 className="cb-portfolio-page-title">Edit Portfolio</h1>
+          <p className="cb-portfolio-page-subtitle">{title}</p>
         </div>
       </div>
 
-      {error && <div className="ad-error">{error}</div>}
+      {error && <div className="cb-portfolio-error">{error}</div>}
 
-      <div className="ad-split">
+      <div className="cb-portfolio-split">
         {/* Form Panel */}
-        <div className="ad-split-panel">
-          <div className="ad-split-panel-header">Form</div>
-          <div className="ad-split-panel-body">
-            <form className="ad-form" onSubmit={handleSubmit} id="portfolio-edit-form">
+        <div className="cb-portfolio-split-panel">
+          <div className="cb-portfolio-split-panel-header">Form</div>
+          <div className="cb-portfolio-split-panel-body">
+            <form className="cb-portfolio-form" onSubmit={handleSubmit} id="portfolio-edit-form">
 
-              <div className="ad-field">
-                <label className="ad-label">Title *</label>
-                <input className="ad-input" value={title}
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Title *</label>
+                <input className="cb-portfolio-input" value={title}
                   onChange={e => { setTitle(e.target.value); if (!slugManual) setSlug(toSlug(e.target.value)) }} required />
               </div>
 
-              <div className="ad-field">
-                <label className="ad-label">Slug *</label>
-                <input className="ad-input" value={slug}
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Slug *</label>
+                <input className="cb-portfolio-input" value={slug}
                   onChange={e => { setSlug(toSlug(e.target.value)); setSlugManual(true) }} required />
-                <span className="ad-input-hint">URL: /projects/{slug}</span>
+                <span className="cb-portfolio-input-hint">URL: /projects/{slug}</span>
               </div>
 
-              <div className="ad-field">
-                <label className="ad-label">Category *</label>
-                <select className="ad-select" value={category} onChange={e => setCategory(e.target.value)}>
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Category *</label>
+                <select className="cb-portfolio-select" value={category} onChange={e => setCategory(e.target.value)}>
                   {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
 
-              <div className="ad-field">
-                <label className="ad-label">Main Image</label>
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Main Image</label>
                 {imagePreview ? (
                   <div style={{ position:'relative', display:'inline-block' }}>
-                    <img src={imagePreview} alt="Preview" className="ad-upload-preview" />
+                    <img src={imagePreview} alt="Preview" className="cb-portfolio-upload-preview" />
                     <button type="button" onClick={() => { setImageFile(null); setImagePreview('') }}
                       style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.6)', border:'none', borderRadius:'50%', width:22, height:22, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#fff' }}>
                       <X size={12} />
                     </button>
                   </div>
                 ) : (
-                  <div className="ad-upload-zone" onClick={() => fileRef.current?.click()}
+                  <div className="cb-portfolio-upload-zone" onClick={() => fileRef.current?.click()}
                     onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) handleImageChange(f) }}
                     onDragOver={e => e.preventDefault()}>
                     <Upload size={20} style={{ color:'var(--ad-text-muted)', margin:'0 auto 8px', display:'block' }} />
-                    <div className="ad-upload-text">Click or drag to replace image</div>
+                    <div className="cb-portfolio-upload-text">Click or drag to replace image</div>
                     <input ref={fileRef} type="file" accept="image/*" onChange={e => e.target.files?.[0] && handleImageChange(e.target.files[0])} />
                   </div>
                 )}
               </div>
 
-              <div className="ad-field">
-                <label className="ad-label">Overview</label>
-                <textarea className="ad-textarea" rows={3} value={overview} onChange={e => setOverview(e.target.value)} />
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Overview</label>
+                <textarea className="cb-portfolio-textarea" rows={3} value={overview} onChange={e => setOverview(e.target.value)} />
               </div>
 
-              <div className="ad-field">
-                <label className="ad-label">Goals</label>
-                <textarea className="ad-textarea" rows={3} value={goals} onChange={e => setGoals(e.target.value)} />
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Goals</label>
+                <textarea className="cb-portfolio-textarea" rows={3} value={goals} onChange={e => setGoals(e.target.value)} />
               </div>
 
-              <div className="ad-field">
-                <label className="ad-label">Features</label>
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Features</label>
                 <FeatureList features={features} onChange={setFeatures} />
               </div>
 
-              <div className="ad-field">
-                <label className="ad-label">Architecture</label>
-                <textarea className="ad-textarea" rows={2} value={architecture} onChange={e => setArchitecture(e.target.value)} />
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Architecture</label>
+                <textarea className="cb-portfolio-textarea" rows={2} value={architecture} onChange={e => setArchitecture(e.target.value)} />
               </div>
 
-              <div className="ad-field">
-                <label className="ad-label">Tech Stack</label>
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Tech Stack</label>
                 <StackSelect
                   selected={techStack}
                   onChange={(ids, names) => { setTechStack(ids); setStackNames(names) }}
                 />
               </div>
 
-              <div className="ad-field">
-                <label className="ad-label">Live URL</label>
-                <input className="ad-input" type="url" placeholder="https://..." value={link} onChange={e => setLink(e.target.value)} />
+              <div className="cb-portfolio-field">
+                <label className="cb-portfolio-label">Live URL</label>
+                <input className="cb-portfolio-input" type="url" placeholder="https://..." value={link} onChange={e => setLink(e.target.value)} />
               </div>
             </form>
           </div>
@@ -193,12 +187,12 @@ const PortfolioEdit: React.FC = () => {
 
         {/* Preview Panel */}
         <div style={{ position:'sticky', top:24 }}>
-          <div className="ad-split-panel">
-            <div className="ad-split-panel-header">
+          <div className="cb-portfolio-split-panel">
+            <div className="cb-portfolio-split-panel-header">
               Live Preview
               <span style={{ fontSize:10, color:'var(--ad-text-muted)' }}>updates as you type</span>
             </div>
-            <div className="ad-split-panel-body">
+            <div className="cb-portfolio-split-panel-body">
               <PortfolioPreview data={{
                 title, category, imageUrl: imagePreview,
                 overview, goals, features, architecture,
@@ -210,8 +204,8 @@ const PortfolioEdit: React.FC = () => {
       </div>
 
       <div style={{ display:'flex', gap:10, marginTop:24, justifyContent:'flex-end' }}>
-        <button type="button" className="ad-btn ad-btn-ghost" onClick={() => navigate(-1)}>Cancel</button>
-        <button type="submit" form="portfolio-edit-form" className="ad-btn ad-btn-primary" disabled={loading}>
+        <button type="button" className="cb-portfolio-btn cb-portfolio-btn-ghost" onClick={() => navigate(-1)}>Cancel</button>
+        <button type="submit" form="portfolio-edit-form" className="cb-portfolio-btn cb-portfolio-btn-primary" disabled={loading}>
           {loading ? 'Saving...' : 'Save Changes'}
         </button>
       </div>

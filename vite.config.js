@@ -4,6 +4,14 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      }
+    }
+  },
   build: {
     // three.js minified ~600KB adalah wajar dan sudah dipisahkan ke chunk-nya sendiri.
     // Naikkan limit agar warning tidak muncul untuk chunk vendor yang legitimate.

@@ -1,44 +1,74 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import '../styles/css/portofolio-detail.css'
 
-// Import mock images
-import img3nt from '../../../assets/images/portofolio/3nt-studio/3nt-home-mockup-opt.webp'
-import imgBookingin from '../../../assets/images/portofolio/bookingin/bookingin-home-mockup-opt.webp'
-import imgEktm from '../../../assets/images/portofolio/ektm/HomePages.webp'
-import imgBerbagi from '../../../assets/images/portofolio/berbagilagi/berbagi-home-mockup-opt.webp'
-import imgTheDays from '../../../assets/images/portofolio/the-days/thedays-home-mockup-opt.webp'
-import imgAnagata from '../../../assets/images/portofolio/anagata-executive/anagata-home-mockup.webp'
-
-const projects = [
-  { id: '3nt-studio', title: '3NT Studio - Website Photostudio', category: 'Web Development', img: img3nt },
-  { id: 'bookingin', title: 'Bookingin - Website Hotel', category: 'Web Development', img: imgBookingin },
-  { id: 'ektm', title: 'EKTM - Mobile Apps EKTM', category: 'Mobile Apps', img: imgEktm },
-  { id: 'berbagi-lagi', title: 'Berbagi Lagi - Website Donasi', category: 'Web Development', img: imgBerbagi },
-  { id: 'the-days', title: 'The Days - Website Coffee', category: 'Web Development', img: imgTheDays },
-  { id: 'anagata-executive', title: 'Anagata Executive - Website JobPortal', category: 'Web Development', img: imgAnagata },
-]
+interface Project {
+  _id: string
+  title: string
+  category: string
+  slug: { current: string }
+  imageUrl?: string
+}
 
 export const PortofolioDetail = () => {
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState('')
+
+  useEffect(() => {
+    fetch('/api/portfolios')
+      .then(res => res.json())
+      .then(result => {
+        if (!result.success) throw new Error(result.error || 'Unable to load portfolios.')
+        setProjects(result.data)
+      })
+      .catch(err => setError(err.message || 'Unable to load projects.'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="projects-page-wrapper">
+        <section className="projects-page">
+          <div className="projects-header">
+            <h1 className="projects-title">Portofolio</h1>
+          </div>
+          <p style={{ color: '#aaa' }}>Loading projects...</p>
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className="projects-page-wrapper">
       <section className="projects-page">
         <div className="projects-header">
           <h1 className="projects-title">Portofolio</h1>
         </div>
-        
-        <div className="projects-grid">
-          {projects.map((project) => (
-            <Link to={`/projects/${project.id}`} key={project.id} className="project-card">
-              <div className="project-img-wrapper">
-                <img src={project.img} alt={project.title} loading="lazy" draggable="false" />
-              </div>
-              <div className="project-info">
-                <h2 className="project-name">{project.title}</h2>
-                <p className="project-category">{project.category}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+
+        {error ? (
+          <p style={{ color: '#ff4d4d' }}>{error}</p>
+        ) : projects.length === 0 ? (
+          <p style={{ color: '#aaa' }}>No projects yet.</p>
+        ) : (
+          <div className="projects-grid">
+            {projects.map((project) => (
+              <Link to={`/projects/${project.slug.current}`} key={project._id} className="project-card">
+                <div className="project-img-wrapper">
+                  {project.imageUrl ? (
+                    <img src={project.imageUrl} alt={project.title} loading="lazy" draggable="false" />
+                  ) : (
+                    <div style={{ width:'100%', height:'100%', background:'#111', display:'flex', alignItems:'center', justifyContent:'center', color:'#666', fontSize:12 }}>No image</div>
+                  )}
+                </div>
+                <div className="project-info">
+                  <h2 className="project-name">{project.title}</h2>
+                  <p className="project-category">{project.category}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   )
