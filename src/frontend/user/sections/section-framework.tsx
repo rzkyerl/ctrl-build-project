@@ -1,32 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import '../styles/css/section-framework.css'
 
-const frameworks = [
-  { name: 'Laravel',      slug: 'laravel' },
-  { name: 'React',        slug: 'react' },
-  { name: 'Next.js',      slug: 'nextdotjs' },
-  { name: 'SvelteKit',    slug: 'svelte' },
-  { name: 'Docker',       slug: 'docker' },
-  { name: 'HTML5',        slug: 'html5' },
-  { name: 'CSS3',         slug: 'css' },
-  { name: 'JavaScript',   slug: 'javascript' },
-  { name: 'Tailwind CSS', slug: 'tailwindcss' },
-  { name: 'Figma',        slug: 'figma' },
-  { name: 'Node.js',      slug: 'nodedotjs' },
-  { name: 'Python',       slug: 'python' },
-  { name: 'PostgreSQL',   slug: 'postgresql' },
-  { name: 'Sanity',       slug: 'sanity' },
-  { name: 'Vercel',       slug: 'vercel' },
-  { name: 'GitHub',       slug: 'github' },
-  { name: 'Git',          slug: 'git' },
-  { name: 'Postman',      slug: 'postman' },
-  { name: 'NestJS',       slug: 'nestjs' },
-  { name: 'MySQL',        slug: 'mysql' },
-  { name: 'PHP',          slug: 'php' },
-  { name: 'TurboRepo',    slug: 'turborepo' },
-  { name: 'Vite',         slug: 'vite' },
-  { name: 'Bootstrap',    slug: 'bootstrap' },
-]
+interface Stack {
+  _id: string
+  name: string
+  slug: { current: string }
+  iconUrl?: string
+}
 
 /* Rolling counter */
 function useCounter(target: number, duration = 1400) {
@@ -41,7 +21,7 @@ function useCounter(target: number, duration = 1400) {
       const start = performance.now()
       const step = (now: number) => {
         const p = Math.min((now - start) / duration, 1)
-        const ease = 1 - Math.pow(1 - p, 4)   // ease-out quart
+        const ease = 1 - Math.pow(1 - p, 4)
         el.textContent = Math.round(ease * target).toString()
         if (p < 1) requestAnimationFrame(step)
       }
@@ -56,8 +36,22 @@ function useCounter(target: number, duration = 1400) {
 
 export const FrameworkSection = () => {
   const headerRef  = useRef<HTMLDivElement>(null)
-  const counterRef = useCounter(24)
-  const track      = [...frameworks, ...frameworks, ...frameworks]
+  const [stacks, setStacks] = useState<Stack[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/stacks')
+      .then(res => res.json())
+      .then(result => {
+        if (!result.success) throw new Error(result.error || 'Unable to load stacks.')
+        setStacks(result.data)
+      })
+      .catch(() => setStacks([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const track = stacks.length ? [...stacks, ...stacks, ...stacks] : []
+  const counterRef = useCounter(stacks.length || 0)
 
   useEffect(() => {
     const header = headerRef.current
@@ -69,6 +63,19 @@ export const FrameworkSection = () => {
     obs.observe(header)
     return () => obs.disconnect()
   }, [])
+
+  if (loading) {
+    return (
+      <section className="fw-section" id="frameworks">
+        <div className="fw-header reveal" ref={headerRef}>
+          <div className="fw-header-left">
+            <span className="section-label">— Tech Stack</span>
+            <h2 className="section-big-title">Technologies &amp; Frameworks<br />we work with</h2>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="fw-section" id="frameworks">
@@ -88,10 +95,10 @@ export const FrameworkSection = () => {
       <div className="fw-marquee-wrap">
         <div className="fw-marquee-row">
           {track.map((tech, i) => (
-            <div className="fw-icon" key={`${tech.slug}-${i}`} title={tech.name}>
+            <div className="fw-icon" key={`${tech.slug.current}-${i}`} title={tech.name}>
               <div className="fw-icon-inner">
                 <img
-                  src={`https://cdn.simpleicons.org/${tech.slug}/000000`}
+                  src={tech.iconUrl || `https://cdn.simpleicons.org/${tech.slug.current}/000000`}
                   alt={tech.name}
                   loading="lazy"
                   draggable="false"

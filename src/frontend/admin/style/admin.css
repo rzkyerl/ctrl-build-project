@@ -1162,6 +1162,84 @@
   justify-content: center;
 }
 
+.cb-stack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.cb-stack-card {
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  border-radius: var(--ad-radius);
+  padding: 16px;
+  text-align: center;
+  transition: border-color var(--ad-transition);
+}
+
+.cb-stack-card:hover {
+  border-color: var(--ad-border-hover);
+}
+
+.cb-stack-card-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  margin: 0 auto 10px;
+  display: block;
+}
+
+.cb-stack-card-icon-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--ad-surface2);
+  border: 1px dashed var(--ad-border);
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ad-text-muted);
+  font-size: 16px;
+}
+
+.cb-stack-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cb-stack-card-slug {
+  font-size: 10px;
+  font-family: var(--ad-font-display);
+  color: var(--ad-text-muted);
+  margin-bottom: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cb-stack-card-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.cb-stack-card-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.cb-stack-card-warning {
+  font-size: 10px;
+  color: var(--ad-warning);
+  margin-top: 6px;
+  line-height: 1.3;
+}
+
 /* â”€â”€ Toolbar (search + filter) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cb-portfolio-toolbar {
   display: flex;

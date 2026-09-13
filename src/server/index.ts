@@ -326,11 +326,19 @@ app.delete('/api/stacks/:id', async (req, res) => {
     }
 
     const { id } = req.params
+    const used = await sanityReadClient.fetch<{ _id: string }[]>(
+      `*[_type == "portfolio" && references($id)]{ _id }`,
+      { id }
+    )
+    if (used.length > 0) {
+      return res.status(409).json(fail('Cannot delete this technology because it is used by portfolio projects.'))
+    }
+
     await sanityAdminClient.delete(id)
     res.status(204).end()
   } catch (err: any) {
     console.error('Delete stack error:', err)
-    res.status(500).json(fail(err.message || 'Failed to delete stack.'))
+    res.status(500).json(fail('Failed to delete stack.'))
   }
 })
 

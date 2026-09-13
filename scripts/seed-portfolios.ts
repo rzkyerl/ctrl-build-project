@@ -30,21 +30,20 @@ const admin = createClient({
 
 const ASSETS = path.resolve(__dirname, '..', 'src', 'assets', 'images', 'portofolio')
 
-function assetPath(rel: string) {
-  return path.join(ASSETS, rel)
+function assetPath(rel: string): string {
+  return path.resolve(ASSETS, rel)
 }
 
-async function uploadImage(relPath: string): Promise<string> {
+function uploadImage(relPath: string): Promise<string> {
   const full = assetPath(relPath)
   if (!fs.existsSync(full)) {
     console.warn(`  [warn] image not found: ${full}`)
-    return ''
+    return Promise.resolve('')
   }
   const buffer = fs.readFileSync(full)
-  const asset = await admin.assets.upload('image', buffer, {
+  return admin.assets.upload('image', buffer, {
     filename: path.basename(full),
-  })
-  return asset._id
+  }).then((asset) => asset._id)
 }
 
 async function ensureValidStack(slug: string, name: string): Promise<string> {
@@ -114,9 +113,6 @@ async function main() {
     ['Vite', 'vite'],
     ['Tailwind CSS 4', 'tailwind-css-4'],
     ['Sanity CMS', 'sanity-cms'],
-    ['Framer Motion', 'framer-motion'],
-    ['jsPDF', 'jspdf'],
-    ['TypeScript', 'typescript'],
   ]
 
   console.log('\nEnsuring stacks...')
@@ -133,8 +129,8 @@ async function main() {
     '3nt-studio': '3nt-studio/3nt-home-mockup-opt.webp',
     'bookingin': 'bookingin/bookingin-home-mockup-opt.webp',
     'ektm': 'ektm/HomePages.webp',
-    'berbagi-lagi': 'berbagilagi/berbagi-home-mockup-opt.webp',
-    'the-days': 'the-days/thedays-home-mockup-opt.webp',
+    'berbagi-lagi': 'berbagilagi/berbagi-home-mockup.opt.webp',
+    'the-days': 'the-days/thedays-home-mockup.opt.webp',
     'anagata-executive': 'anagata-executive/anagata-home-mockup.webp',
   }
 
@@ -145,22 +141,21 @@ async function main() {
       continue
     }
     const buffer = fs.readFileSync(full)
-    const asset = await admin.assets.upload('image', buffer, {
-      filename: path.basename(full),
-    })
-    images[slug] = asset._id
-    console.log(`  [image] ${slug} -> ${asset._id}`)
+    const asset = await uploadImage(rel)
+    images[slug] = asset
+    console.log(`  [image] ${slug} -> ${asset}`)
   }
 
   // 3) Create portfolio documents
   console.log('\nCreating portfolios...')
-
   const portfolios: Record<string, any> = {
     '3nt-studio': {
       title: '3NT Studio - Website Photostudio',
       slug: { current: '3nt-studio' },
       category: 'Web Development',
-      image: images['3nt-studio'] ? { _type: 'image', asset: { _type: 'reference', _ref: images['3nt-studio'] } } : undefined,
+      image: images['3nt-studio']
+        ? { _type: 'image', asset: { _type: 'reference', _ref: images['3nt-studio'] } }
+        : undefined,
       overview: 'Proyek ini adalah 3NT Studio, sebuah platform website premium yang berfungsi sebagai Portfolio Fotografi & Sistem Booking Otomatis. Website ini dirancang dengan estetika modern, minimalis, dan monokromatik untuk memberikan kesan mewah dan profesional bagi sebuah studio foto.',
       goals: 'Proyek ini bertujuan untuk menjadi etalase digital bagi 3NT Studio dalam memamerkan karya fotografi mereka sekaligus menyediakan sistem manajemen pemesanan (booking) yang terintegrasi bagi calon klien.',
       features: [
@@ -178,31 +173,41 @@ async function main() {
       title: 'Bookingin - Website Hotel',
       slug: { current: 'bookingin' },
       category: 'Web Development',
-      image: images['bookingin'] ? { _type: 'image', asset: { _type: 'reference', _ref: images['bookingin'] } } : undefined,
+      image: images['bookingin']
+        ? { _type: 'image', asset: { _type: 'reference', _ref: images['bookingin'] } }
+        : undefined,
     },
     'ektm': {
       title: 'EKTM - Mobile Apps EKTM',
       slug: { current: 'ektm' },
       category: 'Mobile Apps',
-      image: images['ektm'] ? { _type: 'image', asset: { _type: 'reference', _ref: images['ektm'] } } : undefined,
+      image: images['ektm']
+        ? { _type: 'image', asset: { _type: 'reference', _ref: images['ektm'] } }
+        : undefined,
     },
     'berbagi-lagi': {
       title: 'Berbagi Lagi - Website Donasi',
       slug: { current: 'berbagi-lagi' },
       category: 'Web Development',
-      image: images['berbagi-lagi'] ? { _type: 'image', asset: { _type: 'reference', _ref: images['berbagi-lagi'] } } : undefined,
+      image: images['berbagi-lagi']
+        ? { _type: 'image', asset: { _type: 'reference', _ref: images['berbagi-lagi'] } }
+        : undefined,
     },
     'the-days': {
       title: 'The Days - Website Coffee',
       slug: { current: 'the-days' },
       category: 'Web Development',
-      image: images['the-days'] ? { _type: 'image', asset: { _type: 'reference', _ref: images['the-days'] } } : undefined,
+      image: images['the-days']
+        ? { _type: 'image', asset: { _type: 'reference', _ref: images['the-days'] } }
+        : undefined,
     },
     'anagata-executive': {
       title: 'Anagata Executive - Website JobPortal',
       slug: { current: 'anagata-executive' },
       category: 'Web Development',
-      image: images['anagata-executive'] ? { _type: 'image', asset: { _type: 'reference', _ref: images['anagata-executive'] } } : undefined,
+      image: images['anagata-executive']
+        ? { _type: 'image', asset: { _type: 'reference', _ref: images['anagata-executive'] } }
+        : undefined,
     },
   }
 
