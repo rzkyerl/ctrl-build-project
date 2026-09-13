@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import {
   Copy,
   RefreshCw,
@@ -9,8 +9,10 @@ import {
 } from 'lucide-react'
 import { EmptyState } from './EmptyState'
 import { MarkdownRenderer } from './MarkdownRenderer'
+import { SourcesPanel } from './SourcesPanel'
 import { Actions, Action } from './ui/actions'
 import { getFileIcon, formatFileSize } from '../constants'
+import { parseSources } from '../utils/parseSources'
 
 /* ═══════════════════════════════════════════════════
    ChatArea — Message list with auto-scroll + empty state
@@ -216,21 +218,49 @@ function FileAttachments({ files }) {
 
 /* ── Single Message ── */
 function Message({ message, isGenerating, isLastUser, isStreaming = false, showHaluWarning = false, onRegenerate, onCopyMessage, onLike, onDislike, onShare }) {
-  const [copied, setCopied]       = useState(false)
+  const [copied, setCopied]             = useState(false)
   const [showThinking, setShowThinking] = useState(false)
-  const [feedback, setFeedback]   = useState(null)
+  const [thinkingSeconds, setThinkingSeconds] = useState(0)
+  const [feedback, setFeedback]         = useState(null)
+  const thinkingTimerRef                = useRef(null)
   const isUser  = message.role === 'user'
   const isAI    = message.role === 'assistant'
   const hasContent = (message.content || '').length > 0
   const hasFiles = message.files && message.files.length > 0
   const canCopy = hasContent
 
+  // Sources from SSE event (set by AiChatPage via updateMessage).
+  // Fall back to text-parsing for old messages.
+  const sources = useMemo(() => {
+    // SSE sources take priority
+    if (message.sources && message.sources.length > 0) return message.sources
+    // Try parsing Sources block from text
+    if (!isAI || isStreaming || !hasContent) return []
+    return parseSources(message.content || '').sources
+  }, [isAI, isStreaming, hasContent, message.sources, message.content])
+
+  // Always pass full content — MarkdownRenderer strips "Sumber:" block internally
+  const displayBody = message.content || ''
+
   /* ── Show thinking overlay when AI starts generating (no content yet) ── */
   useEffect(() => {
     if (isStreaming && !hasContent) {
       setShowThinking(true)
+      setThinkingSeconds(0)
+      // Start elapsed timer
+      thinkingTimerRef.current = setInterval(() => {
+        setThinkingSeconds(s => s + 1)
+      }, 1000)
     } else {
       setShowThinking(false)
+      setThinkingSeconds(0)
+      if (thinkingTimerRef.current) {
+        clearInterval(thinkingTimerRef.current)
+        thinkingTimerRef.current = null
+      }
+    }
+    return () => {
+      if (thinkingTimerRef.current) clearInterval(thinkingTimerRef.current)
     }
   }, [isStreaming, hasContent])
 
@@ -309,22 +339,48 @@ function Message({ message, isGenerating, isLastUser, isStreaming = false, showH
         {showThinking && (
           <div className="chat-msg-thinking-overlay">
             <div className="chat-msg-thinking">
-              <span>Thinking</span>
+              <span className="chat-msg-thinking-label">
+                {thinkingSeconds < 3 ? 'Thinking' : 'Processing'}
+              </span>
               <div className="chat-msg-thinking-dots">
                 <span className="chat-msg-thinking-dot" />
                 <span className="chat-msg-thinking-dot" />
                 <span className="chat-msg-thinking-dot" />
               </div>
+              {thinkingSeconds > 0 && (
+                <span className="chat-msg-thinking-timer">{thinkingSeconds}s</span>
+              )}
             </div>
+            {thinkingSeconds >= 3 && (
+              <div className="chat-msg-thinking-note">
+                Taking a moment — the model is working on your response
+              </div>
+            )}
           </div>
         )}
 
         {(message.content || !hasFiles) && (
           <div className={`chat-msg-content${isAI ? ' md-content' : ''}`}>
             {isAI ? (
-              <div className={isStreaming && hasContent ? 'chat-msg-streaming' : ''}>
-                <MarkdownRenderer content={message.content} isStreaming={isStreaming && hasContent} />
-              </div>
+              message.failed ? (
+                <div className="chat-msg-failed">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Couldn't get a response. Try sending again or switch to a different model.
+                </div>
+              ) : (
+                <div className={isStreaming && hasContent ? 'chat-msg-streaming' : ''}>
+                  <MarkdownRenderer
+                    content={displayBody}
+                    isStreaming={isStreaming && hasContent}
+                    sources={sources}
+                  />                  {/* Sources panel — only shown after streaming completes and sources exist */}
+                  {!isStreaming && sources.length > 0 && (
+                    <SourcesPanel sources={sources} />
+                  )}
+                </div>
+              )
             ) : (
               message.content
             )}

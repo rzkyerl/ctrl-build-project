@@ -173,6 +173,26 @@ export const NIM_MODELS = [
     description: 'Fastest, lowest-cost Gemini model for simple tasks',
     tags:        ['Free', 'Multimodal', 'Lite'],
   },
+  // --- Ollama models (self-hosted via Tailscale tunnel) ---
+  // These models run on local GPU and are routed to OLLAMA_BASE_URL.
+  // They are marked experimental because availability depends on the
+  // host device / tunnel being online.
+  {
+    id:          'ollama/llama3.1:8b',
+    label:       'Llama 3.1 8B · Preview',
+    vendor:      'Ollama',
+    description: 'Open-source Llama 3.1 8B · Self-hosted inference, early access',
+    tags:        ['Preview', 'Experimental'],
+    experimental: true,
+  },
+  {
+    id:          'ollama/qwen2.5:7b',
+    label:       'Qwen 2.5 7B · Preview',
+    vendor:      'Ollama',
+    description: 'Alibaba Qwen 2.5 7B · Strong multilingual & coding, self-hosted',
+    tags:        ['Preview', 'Experimental'],
+    experimental: true,
+  },
 ]
 
 export const DEFAULT_MODEL = NIM_MODELS[0]
@@ -205,6 +225,8 @@ export async function streamChatCompletion({
   onModelUsed,
   onSearchStart,
   onSearchDone,
+  onSources,
+  onModelUnavailable,
 }) {
   const url = '/api/chat'
 
@@ -226,8 +248,16 @@ export async function streamChatCompletion({
   })
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => 'Unknown error')
-    throw new Error(`AI API error ${response.status}: ${errorText}`)
+    const errorText = await response.text().catch(() => '')
+    // Try to extract a clean message from JSON body, otherwise use generic
+    let friendlyMsg = 'Couldn\'t get a response. Please try again.'
+    try {
+      const parsed = JSON.parse(errorText)
+      if (parsed?.error && !parsed.error.includes('://') && parsed.error.length < 120) {
+        friendlyMsg = parsed.error
+      }
+    } catch { /* ignore */ }
+    throw new Error(friendlyMsg)
   }
 
   // Read which model actually served the response (for Auto mode indicator)
@@ -270,9 +300,25 @@ export async function streamChatCompletion({
           onSearchDone?.(json.resultsCount || 0)
           continue
         }
+        if (json.type === 'sources' && Array.isArray(json.sources)) {
+          // Attach favicon URLs to each source
+          const enriched = json.sources.map(s => ({
+            ...s,
+            favicon: s.domain
+              ? `https://www.google.com/s2/favicons?domain=${s.domain}&sz=32`
+              : '',
+          }))
+          onSources?.(enriched)
+          continue
+        }
         if (json.type === 'error' || json.error) {
           // Backend encountered an error mid-stream
-          const errMsg = json.message || json.error || 'Search failed'
+          const errMsg = json.message || json.error || 'Something went wrong'
+          // model_unavailable: true means the user-selected model failed (non-auto mode)
+          if (json.model_unavailable) {
+            onModelUnavailable?.(errMsg)
+            return fullText // don't throw — just stop streaming gracefully
+          }
           throw new Error(errMsg)
         }
 

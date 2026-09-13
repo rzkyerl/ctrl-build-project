@@ -34,6 +34,7 @@ export default function AiChatPage() {
   const [sidebarOpen, setSidebarOpen]   = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [error, setError]               = useState(null)
+  const [modelUnavailable, setModelUnavailable] = useState(null) // inline model-unavailable warning
   const [convMenuOpen, setConvMenuOpen]   = useState(false)
   const [renaming, setRenaming]           = useState(false)
   const [renameValue, setRenameValue]     = useState('')
@@ -201,6 +202,7 @@ export default function AiChatPage() {
     }
 
     setError(null)
+    setModelUnavailable(null)
     setUsedModel(null)
     setIsSearching(false)
     setSearchDone(false)
@@ -254,11 +256,18 @@ export default function AiChatPage() {
           setIsSearching(false)
           setSearchDone(true)
         },
+        onSources: (sources) => {
+          // Store sources on the AI message so chips can link directly
+          updateMessage(sessionId, aiMsg.id, null, { sources })
+        },
+        onModelUnavailable: (msg) => {
+          setModelUnavailable(msg)
+        },
       })
 
-      // If nothing was streamed, show a fallback
+      // If nothing was streamed, mark the bubble as failed (tanda seru)
       if (accumulated === '' && !controller.signal.aborted) {
-        updateMessage(sessionId, aiMsg.id, 'No response received from the AI. Please try again.')
+        updateMessage(sessionId, aiMsg.id, null, { failed: true })
       }
 
       // Post-stream hallucination phrase check → soft warning under AI message
@@ -275,14 +284,20 @@ export default function AiChatPage() {
       }
     } catch (err) {
       if (err.name === 'AbortError') {
-        // User clicked stop - keep whatever was streamed
+        // User clicked stop — keep whatever was streamed
       } else {
-        console.error('NIM streaming error:', err)
-        const errorMsg = err.message || 'Something went wrong. The AI couldn\'t generate a reply.'
-        setError(errorMsg)
-        // Show the error inline if the model didn't stream anything
+        console.error('Chat streaming error:', err)
+        // Show friendly inline warning strip — never show raw technical errors
+        const raw = err.message || ''
+        const friendly = raw.includes('fetch') || raw.includes('network') || raw.includes('500') || raw.includes('unreachable')
+          ? 'Couldn\'t reach the model right now. Try again or switch to a different model.'
+          : raw.length > 0 && raw.length < 120 && !raw.includes('://') && !raw.includes('{')
+            ? raw
+            : 'Something went wrong. Please try again.'
+        setModelUnavailable(friendly)
+        // Mark the empty AI bubble as failed
         if (accumulated === '') {
-          updateMessage(sessionId, aiMsg.id, errorMsg)
+          updateMessage(sessionId, aiMsg.id, null, { failed: true })
         }
       }
     } finally {
@@ -404,14 +419,14 @@ export default function AiChatPage() {
           </div>
         </header>
 
-        {/* Error banner */}
-        {error && (
-          <div className="chat-error" style={{ marginTop: 16 }}>
-            <div className="chat-error-title">Something went wrong.</div>
-            <div className="chat-error-desc">{error}</div>
-            <button className="chat-error-retry" onClick={() => setError(null)}>
-              Try again
-            </button>
+        {/* Inline model-unavailable warning — compact, below chat area */}
+        {modelUnavailable && (
+          <div className="chat-model-unavailable">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="chat-model-unavailable-icon">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{modelUnavailable.replace(/\*\*/g, '')}</span>
+            <button className="chat-model-unavailable-dismiss" onClick={() => setModelUnavailable(null)} aria-label="Dismiss">✕</button>
           </div>
         )}
 

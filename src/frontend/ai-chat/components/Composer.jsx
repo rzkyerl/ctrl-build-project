@@ -205,6 +205,16 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
 
         {fileError && <div className="chat-file-error">{fileError}</div>}
 
+        {/* ── Experimental model warning — shown when an Ollama model is selected ── */}
+        {selectedModelObj?.experimental && (
+          <div className="chat-experimental-banner">
+            <span>
+              <strong>{selectedModelObj.label}</strong> is an early access model running on self-hosted infrastructure.
+              It may be <strong>temporarily unavailable</strong> outside of active development sessions. If unresponsive, your message will be routed to another model automatically.
+            </span>
+          </div>
+        )}
+
         <BorderBeam size="md" colorVariant="colorful" active={beamActive} duration={3} borderRadius={20}>
           <div
             className="chat-composer-box"
@@ -295,15 +305,25 @@ export function Composer({ onSend, onStop, isGenerating, enterToSend = true, sel
             {models.map(model => (
               <button
                 key={model.id}
-                className={`chat-model-select-item${model.id === selectedModel ? ' active' : ''}`}
+                className={`chat-model-select-item${model.id === selectedModel ? ' active' : ''}${model.experimental ? ' experimental' : ''}`}
                 onClick={() => { onSelectModel?.(model.id); setActiveMenu(null) }}
               >
                 <div className="chat-model-select-radio">
                   {model.id === selectedModel && <Check size={11} />}
                 </div>
                 <div className="chat-model-select-info">
-                  <div className="chat-model-select-name">{model.label}</div>
+                  <div className="chat-model-select-name">
+                    {model.label}
+                    {model.experimental && (
+                      <span className="chat-model-experimental-badge">Dev</span>
+                    )}
+                  </div>
                   <div className="chat-model-select-desc">{model.description}</div>
+                  {model.experimental && (
+                    <div className="chat-model-experimental-note">
+                      ⚠ This model is in early access and may be offline when the developer's tunnel is not active.
+                    </div>
+                  )}
                 </div>
               </button>
             ))}

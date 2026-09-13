@@ -24,6 +24,15 @@ const NIM_URL    = 'https://integrate.api.nvidia.com/v1/chat/completions'
 const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions'
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
 
+// Ollama — self-hosted via Tailscale / Google Colab tunnel.
+// Reads OLLAMA_BASE_URL from .env.local (e.g. http://100.x.x.x:11434).
+// NOTE: Read lazily inside handlers (not at module level) so that
+// vite.config.js has time to set process.env.OLLAMA_BASE_URL first.
+function getOllamaUrl() {
+  const base = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '')
+  return base ? `${base}/v1/chat/completions` : null
+}
+
 /**
  * Fallback order used when model === 'auto'.
  * NIM → Groq → Gemini.
@@ -69,6 +78,7 @@ const TITLE_FALLBACK_MODELS = [
 function getProviderUrl(provider) {
   if (provider === 'groq')   return GROQ_URL
   if (provider === 'gemini') return GEMINI_URL
+  if (provider === 'ollama') return getOllamaUrl()
   return NIM_URL
 }
 
@@ -87,6 +97,7 @@ function remapGeminiModel(modelId) {
 
 function detectProvider(modelId) {
   if (!modelId) return { provider: 'nim', model: modelId }
+  if (modelId.startsWith('ollama/')) return { provider: 'ollama', model: modelId.slice(7) }
   if (modelId.startsWith('groq/'))   return { provider: 'groq',   model: modelId.slice(5) }
   if (modelId.startsWith('gemini/')) return { provider: 'gemini', model: remapGeminiModel(modelId.slice(7)) }
   return { provider: 'nim', model: modelId }
@@ -129,7 +140,7 @@ function buildRequestBody(provider, modelId, finalMessages, opts) {
   if (provider === 'gemini') {
     return buildGeminiBody(modelId, finalMessages, opts)
   }
-  return provider === 'groq'
+  return provider === 'groq' || provider === 'ollama'
     ? { messages: finalMessages, model: modelId, max_tokens, temperature, stream }
     : { messages: finalMessages, model: modelId, max_tokens, temperature, seed, stream }
 }
@@ -165,6 +176,7 @@ function buildSystemPrompt(activeModel, activeProvider) {
     nim:    'NVIDIA NIM',
     groq:   'Groq',
     gemini: 'Google Gemini',
+    ollama: 'Ollama (Self-hosted)',
   }[activeProvider] || (activeProvider || 'AI')
 
   const modelLabel = activeModel || 'unknown'
@@ -222,6 +234,22 @@ Follow these guidelines:
 - For long responses, use headings to organize sections
 - Use tables for structured comparisons
 - Keep explanations beginner-friendly unless asked otherwise`,
+  }
+}
+
+/**
+ * Compact system prompt for Ollama models.
+ * Keeps TTFT low by staying under ~150 tokens.
+ * Omits verbose rules that hurt latency on local GPU.
+ */
+function buildOllamaSystemPrompt(activeModel, activeProvider) {
+  const providerLabel = 'Ollama (Self-hosted)'
+  const modelLabel = activeModel || 'unknown'
+  const date = getCurrentDateString()
+  return {
+    role: 'system',
+    content: `You are Nyx Agent, an AI assistant by CTRL Build. Model: ${modelLabel} (${providerLabel}). Today: ${date}.
+Be concise and helpful. Use Markdown. Cite sources as [1][2] when search results are provided. Never invent facts.`,
   }
 }
 
@@ -289,13 +317,10 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
   if (isAuto) {
     modelsToTry = AUTO_FALLBACK_ORDER
   } else {
+    // Non-auto: only try the selected model, no silent fallback.
+    // If it fails, the user gets a clear inline warning to pick another model.
     const { provider, model: rawModel } = detectProvider(model)
-    modelsToTry = [
-      { model: rawModel, provider },
-      ...AUTO_FALLBACK_ORDER.filter(
-        m => !(m.model === rawModel && m.provider === provider)
-      ),
-    ]
+    modelsToTry = [{ model: rawModel, provider }]
   }
 
   // Filter out providers without API keys
@@ -303,6 +328,7 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
     if (m.provider === 'nim')    return !!nimKey
     if (m.provider === 'groq')   return !!groqKey
     if (m.provider === 'gemini') return !!geminiKey
+    if (m.provider === 'ollama') return !!getOllamaUrl()
     return false
   })
 
@@ -400,7 +426,9 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
   for (let i = 0; i < modelsToTry.length; i++) {
     const { model: tryModel, provider } = modelsToTry[i]
     const isLast = i === modelsToTry.length - 1
-    const apiKey = provider === 'groq' ? groqKey : provider === 'gemini' ? geminiKey : nimKey
+    const apiKey = provider === 'groq' ? groqKey : provider === 'gemini' ? geminiKey : provider === 'ollama' ? null : nimKey
+
+    console.log(`[dev-api] Trying [${provider}] ${tryModel} (${i + 1}/${modelsToTry.length})`)
 
     // Safety guard: if response headers have already been sent (e.g. by
     // the search indicator phase), we can no longer send JSON errors or
@@ -417,7 +445,9 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
     // Build messages with correct model identity in system prompt
     let messagesForThisAttempt
     if (!hasSystem) {
-      const sysPrompt = buildSystemPrompt(tryModel, provider)
+      const sysPrompt = provider === 'ollama'
+        ? buildOllamaSystemPrompt(tryModel, provider)
+        : buildSystemPrompt(tryModel, provider)
       if (didSearch && searchResult) {
         const searchContext = formatSearchContext(searchQuery, searchResult.results)
         const sysWithSearch = { ...sysPrompt, content: sysPrompt.content + '\n\n' + searchContext }
@@ -441,6 +471,13 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
       const action = stream ? 'streamGenerateContent' : 'generateContent'
       apiUrl  = `${GEMINI_URL}/${tryModel}:${action}?alt=sse&key=${encodeURIComponent(apiKey)}`
       headers = { 'Content-Type': 'application/json' }
+    } else if (provider === 'ollama') {
+      // Ollama: OpenAI-compatible, no auth required
+      apiUrl  = getOllamaUrl()
+      headers = {
+        'Content-Type': 'application/json',
+        'Accept':       stream ? 'text/event-stream' : 'application/json',
+      }
     } else {
       apiUrl = getProviderUrl(provider)
       headers = {
@@ -450,8 +487,14 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
       }
     }
 
+    // Ollama: use a longer timeout (90s) to accommodate cold-start model
+    // loading — first request after idle can take 15-60s to load tensors
+    // into memory. Tunnel-offline failures happen at TCP/TLS level almost
+    // immediately, so a long timeout doesn't delay fallback in that case.
+    // Other providers get 6s (cloud APIs respond quickly or not at all).
+    const connectTimeoutMs = provider === 'ollama' ? 90000 : 6000
     const controller = new AbortController()
-    const timeoutId  = setTimeout(() => controller.abort(), 6000)
+    const timeoutId  = setTimeout(() => controller.abort(), connectTimeoutMs)
 
     try {
       const apiResponse = await fetch(apiUrl, {
@@ -467,14 +510,17 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
         console.warn(`[dev-api] [${provider}] ${tryModel} returned ${apiResponse.status}, trying next...`)
         await apiResponse.text().catch(() => {})
         if (!isLast) continue
-        // If headers already sent (streaming), send SSE error and end
+        // Last model failed — tell client which model was unavailable
+        const errMsg = !isAuto
+          ? `**${model}** is currently unavailable (${apiResponse.status}). Try selecting a different model.`
+          : 'All models are rate-limited. Please try again in a moment.'
         if (res.headersSent) {
-          writeSSEEvent(res, { type: 'error', message: 'All models are rate-limited. Please try again.' })
+          writeSSEEvent(res, { type: 'error', message: errMsg, model_unavailable: !isAuto })
           return res.end()
         }
         res.statusCode = 503
         res.setHeader('Content-Type', 'application/json')
-        return res.end(JSON.stringify({ error: 'All models are rate-limited. Please try again in a moment.' }))
+        return res.end(JSON.stringify({ error: errMsg }))
       }
 
       // Non-error status — but check for other client errors
@@ -482,14 +528,16 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
         const errorText = await apiResponse.text().catch(() => 'Unknown error')
         console.error(`[dev-api] [${provider}] ${tryModel} error:`, apiResponse.status, errorText)
         if (!isLast) continue
-        // If headers already sent (streaming), send SSE error and end
+        const errMsg = !isAuto
+          ? `**${model}** is currently unavailable. Try selecting a different model.`
+          : 'The AI couldn\'t generate a reply. Please try again.'
         if (res.headersSent) {
-          writeSSEEvent(res, { type: 'error', message: 'The AI couldn\'t generate a reply. Please try again.' })
+          writeSSEEvent(res, { type: 'error', message: errMsg, model_unavailable: !isAuto })
           return res.end()
         }
         res.statusCode = apiResponse.status
         res.setHeader('Content-Type', 'application/json')
-        return res.end(JSON.stringify({ error: 'The AI couldn\'t generate a reply. Please try again.' }))
+        return res.end(JSON.stringify({ error: errMsg }))
       }
 
       // Success! Set SSE headers if not already set (search phase may
@@ -499,9 +547,15 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
         res.setHeader('Cache-Control', 'no-cache')
         res.setHeader('Connection',    'keep-alive')
       }
-      setModelHeaders(res, tryModel, provider)
+      // X-Used-Model headers: only set if headers haven't been sent yet.
+      // After search phase, headers are already flushed — setHeader would throw.
+      if (!res.headersSent) {
+        setModelHeaders(res, tryModel, provider)
+      }
       if (i > 0) {
         console.log(`[dev-api] Fallback succeeded with [${provider}] ${tryModel}`)
+      } else {
+        console.log(`[dev-api] Served by [${provider}] ${tryModel}`)
       }
 
       const reader = apiResponse.body.getReader()
@@ -518,7 +572,11 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
       clearTimeout(timeoutId)
 
       if (error.name === 'AbortError') {
-        console.warn(`[dev-api] [${provider}] ${tryModel} timed out after 6s`)
+        if (provider === 'ollama') {
+          console.warn(`[dev-api] [ollama] ${tryModel} timed out tunnel may be offline, falling back`)
+        } else {
+          console.warn(`[dev-api] [${provider}] ${tryModel} timed out after ${provider === 'ollama' ? 90 : 6}s`)
+        }
         // If headers already sent (search phase), we can still try
         // the next model — just don't try to set status codes.
         if (!isLast) {
@@ -526,13 +584,16 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
           continue
         }
         // Last model — send error and end
+        const timeoutMsg = !isAuto
+          ? `**${model}** didn't respond in time. It may be offline or overloaded. Try a different model.`
+          : 'All models timed out. Please try again in a moment.'
         if (res.headersSent) {
-          writeSSEEvent(res, { type: 'error', message: 'All models timed out. Please try again.' })
+          writeSSEEvent(res, { type: 'error', message: timeoutMsg, model_unavailable: !isAuto })
           return res.end()
         }
         res.statusCode = 504
         res.setHeader('Content-Type', 'application/json')
-        return res.end(JSON.stringify({ error: 'All models timed out. Please try again in a moment.' }))
+        return res.end(JSON.stringify({ error: timeoutMsg }))
       }
 
       console.error(`[dev-api] [${provider}] ${tryModel} fetch error:`, error.message)
@@ -540,13 +601,16 @@ async function handleChat(req, res, nimKey, groqKey, geminiKey) {
         console.warn(`[dev-api] Trying next model...`)
         continue
       }
+      const fetchErrMsg = !isAuto
+        ? `**${model}** is currently unreachable. Try selecting a different model.`
+        : 'The AI couldn\'t generate a reply. Please try again.'
       if (res.headersSent) {
-        writeSSEEvent(res, { type: 'error', message: 'The AI couldn\'t generate a reply. Please try again.' })
+        writeSSEEvent(res, { type: 'error', message: fetchErrMsg, model_unavailable: !isAuto })
         return res.end()
       }
       res.statusCode = 500
       res.setHeader('Content-Type', 'application/json')
-      return res.end(JSON.stringify({ error: 'The AI couldn\'t generate a reply. Please try again.' }))
+      return res.end(JSON.stringify({ error: fetchErrMsg }))
     }
   }
 }

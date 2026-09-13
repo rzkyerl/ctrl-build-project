@@ -1,9 +1,8 @@
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useMemo } from 'react'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import hljs from 'highlight.js/lib/core'
 
-/* ── Register only common languages to keep bundle small ── */
 import javascript from 'highlight.js/lib/languages/javascript'
 import typescript from 'highlight.js/lib/languages/typescript'
 import python from 'highlight.js/lib/languages/python'
@@ -43,154 +42,230 @@ hljs.registerLanguage('yml', yaml)
 hljs.registerLanguage('markdown', markdown)
 hljs.registerLanguage('md', markdown)
 
-/* ── Configure marked ── */
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-})
+marked.setOptions({ breaks: true, gfm: true })
 
-/* ── Custom renderer: highlight code blocks ── */
+/* ── Code block renderer ── */
 const renderer = new marked.Renderer()
-
 renderer.code = function (code, language) {
-  // marked v18 passes ({ text, lang }) object or (code, lang) string
-  let codeText, lang
-  if (typeof code === 'object') {
-    codeText = code.text || ''
-    lang = code.lang || ''
-  } else {
-    codeText = code || ''
-    lang = language || ''
-  }
+  let codeText = '', lang = ''
+  if (typeof code === 'object') { codeText = code.text || ''; lang = code.lang || '' }
+  else { codeText = code || ''; lang = language || '' }
 
-  // Decode HTML entities that marked may have added
   codeText = codeText
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
 
-  let highlighted
+  let highlighted = codeText
   if (lang && hljs.getLanguage(lang)) {
-    try {
-      highlighted = hljs.highlight(codeText, { language: lang }).value
-    } catch {
-      highlighted = codeText
-    }
+    try { highlighted = hljs.highlight(codeText, { language: lang }).value } catch { /* */ }
   } else {
-    // Auto-detect
-    try {
-      highlighted = hljs.highlightAuto(codeText).value
-    } catch {
-      highlighted = codeText
-    }
+    try { highlighted = hljs.highlightAuto(codeText).value } catch { /* */ }
   }
 
   const langLabel = lang || 'text'
   const escaped = codeText.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-
-  return `<div class="md-code-block">
-    <div class="md-code-header">
-      <span class="md-code-lang">${langLabel}</span>
-      <button class="md-code-copy" data-code="${escaped}" title="Copy code">Copy</button>
-    </div>
-    <pre><code class="hljs language-${langLabel}">${highlighted}</code></pre>
-  </div>`
+  return `<div class="md-code-block"><div class="md-code-header"><span class="md-code-lang">${langLabel}</span><button class="md-code-copy" data-code="${escaped}">Copy</button></div><pre><code class="hljs language-${langLabel}">${highlighted}</code></pre></div>`
 }
-
 marked.use({ renderer })
 
-/* ═══════════════════════════════════════════════════
-   MarkdownRenderer — Renders markdown content as
-   sanitized HTML with syntax-highlighted code blocks
-═══════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   CITATION INJECTION — two-pass approach:
 
-export function MarkdownRenderer({ content, isStreaming = false }) {
+   Pass 1: Replace [N] bracketed citations (standard format)
+   Pass 2: Replace bare URLs in text that match a known source
+
+   Both replaced with Google AI–style pills: favicon + domain.
+   Sources come from the SSE `sources` event so we don't rely
+   on AI formatting at all.
+══════════════════════════════════════════════════════ */
+
+function buildSourceMap(sources) {
+  const byIndex = new Map()
+  const byUrl   = new Map()
+  const byDomain = new Map()
+
+  if (!Array.isArray(sources)) return { byIndex, byUrl, byDomain }
+
+  for (const s of sources) {
+    if (!s) continue
+    const idx = Number(s.index)
+    if (!isNaN(idx)) byIndex.set(idx, s)
+    if (s.url)    byUrl.set(s.url.replace(/\/$/, ''), s)
+    if (s.domain) byDomain.set(s.domain, s)
+  }
+  return { byIndex, byUrl, byDomain }
+}
+
+function makePill(src, citeNum) {
+  const letter  = (src.domain || src.url || '?').charAt(0).toUpperCase()
+  const domain  = (src.domain || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const url     = (src.url || '').replace(/"/g, '%22')
+  const favicon = (src.favicon || `https://www.google.com/s2/favicons?domain=${src.domain}&sz=32`).replace(/"/g, '%22')
+  const citeAttr = citeNum != null ? ` data-cite="${citeNum}"` : ''
+  return `<a class="md-cite" href="${url}" target="_blank" rel="noopener noreferrer"${citeAttr} data-favicon="${favicon}"><span class="md-cite-icon">${letter}</span><span class="md-cite-domain">${domain}</span></a>`
+}
+
+function injectCitations(html, sourceMap) {
+  const { byIndex, byUrl, byDomain } = sourceMap
+  const CODE_RE = /(<div class="md-code-block">[\s\S]*?<\/div>)/g
+  const parts   = html.split(CODE_RE)
+
+  return parts.map((part, i) => {
+    if (i % 2 === 1) return part  // inside code block — skip
+
+    // ── Pass 1: replace [N] patterns ──────────────────────
+    let out = part.replace(/\[(\d+)\]/g, (_, num) => {
+      const n   = parseInt(num, 10)
+      const src = byIndex.get(n)
+      return src ? makePill(src, n) : `<span class="md-cite md-cite-plain">${n}</span>`
+    })
+
+    // ── Pass 2: replace bare/linked URLs that match sources ──
+    // Target: raw URLs in text like  https://example.com/page
+    // or markdown-style links already converted to <a href="URL">TEXT</a>
+    // We only replace when the URL matches one of our known sources.
+    if (byUrl.size > 0 || byDomain.size > 0) {
+      // Replace <a href="URL">...</a> where URL matches a source
+      out = out.replace(/<a\s[^>]*href="([^"]+)"[^>]*>([^<]*)<\/a>/g, (match, href, text) => {
+        const normalised = href.replace(/\/$/, '')
+        let src = byUrl.get(normalised)
+        if (!src) {
+          try {
+            const d = new URL(href).hostname.replace(/^www\./, '')
+            src = byDomain.get(d)
+          } catch { /* */ }
+        }
+        // If this href is already a .md-cite we built, skip
+        if (match.includes('class="md-cite"')) return match
+        return src ? makePill(src, null) : match
+      })
+
+      // Replace bare https:// URLs in text (not already inside href="...")
+      out = out.replace(/(?<![="'(])https?:\/\/[^\s<>"')]+/g, (url) => {
+        const normalised = url.replace(/\/$/, '')
+        let src = byUrl.get(normalised)
+        if (!src) {
+          try {
+            const d = new URL(url).hostname.replace(/^www\./, '')
+            src = byDomain.get(d)
+          } catch { /* */ }
+        }
+        return src ? makePill(src, null) : url
+      })
+    }
+
+    return out
+  }).join('')
+}
+
+/* ══════════════════════════════════════════════════════
+   Strip semua format "Sumber/Sources" block dari markdown.
+   Handles berbagai format yang model berbeda gunakan:
+   - "Sumber:" / "**Sumber:**" / "## Sumber"
+   - Di awal baris, setelah newline
+   - Dengan atau tanpa bold/heading markers
+══════════════════════════════════════════════════════ */
+const SOURCES_BLOCK_RE = new RegExp(
+  // Match dari "Sumber/Sources" heading sampai akhir string
+  // Supports: Sumber:, **Sumber:**, ## Sumber, Sumber Referensi:, References:, etc.
+  '(?:^|\\n)' +
+  '[ \\t]*(?:\\*{1,2}|#{1,3})?[ \\t]*' +
+  '(?:Sources?|Sumber(?:\\s+Referensi)?|Referensi|References?|Daftar\\s+Pustaka)' +
+  '[ \\t]*:?[ \\t]*(?:\\*{1,2})?[ \\t]*' +
+  '(?:\\n|$)' +
+  '[\\s\\S]*$',
+  'im'
+)
+
+function stripSourcesBlock(text) {
+  return text.replace(SOURCES_BLOCK_RE, '').trimEnd()
+}
+
+/* ══════════════════════════════════════════════════════
+   MarkdownRenderer
+══════════════════════════════════════════════════════ */
+export function MarkdownRenderer({ content, isStreaming = false, sources = [] }) {
   const containerRef = useRef(null)
 
-  const html = useCallback((md, streaming) => {
+  const sourceMap = useMemo(() => buildSourceMap(sources), [sources])
+
+  const renderedHtml = useMemo(() => {
+    const md = content || ''
     if (!md) return ''
     try {
-      const raw = marked.parse(md, { async: false })
-      const sanitized = DOMPurify.sanitize(raw, {
-        ADD_ATTR: ['data-code', 'target', 'rel'],
-        ADD_TAGS: ['span'],
+      // Always strip "Sumber:" / "Sources:" block — regardless of whether
+      // SSE sources arrived. The SourcesPanel renders them separately.
+      const cleaned = stripSourcesBlock(md)
+
+      const raw       = marked.parse(cleaned, { async: false })
+      const withCites = injectCitations(raw, sourceMap)
+
+      const sanitized = DOMPurify.sanitize(withCites, {
+        ADD_ATTR:        ['data-code', 'data-cite', 'data-favicon', 'target', 'rel'],
+        ADD_TAGS:        ['span'],
+        ALLOW_DATA_ATTR: true,
       })
-      if (!streaming) return sanitized
 
-      // Inject cursor span inside the last closing block tag
-      // so it appears inline at the end of the last paragraph/li/heading
+      if (!isStreaming) return sanitized
       const CURSOR = '<span class="chat-stream-cursor"></span>'
-      const match = sanitized.match(/([\s\S]*)(<\/(?:p|li|h[1-6]|td|blockquote)>)\s*$/)
-      if (match) {
-        return match[1] + CURSOR + match[2]
-      }
-      // Fallback: append after all content
-      return sanitized + CURSOR
+      const m = sanitized.match(/([\s\S]*)(<\/(?:p|li|h[1-6]|td|blockquote)>)\s*$/)
+      return m ? m[1] + CURSOR + m[2] : sanitized + CURSOR
     } catch {
-      return DOMPurify.sanitize(md)
+      return DOMPurify.sanitize(content || '')
     }
-  }, [])
+  }, [content, sources, sourceMap, isStreaming])
 
-  /* ── Attach copy handlers after render ── */
+  /* Post-render: code copy + favicon loading */
   useEffect(() => {
     const root = containerRef.current
     if (!root) return
-
-    const buttons = root.querySelectorAll('.md-code-copy')
     const handlers = []
 
-    buttons.forEach((btn) => {
+    root.querySelectorAll('.md-code-copy').forEach((btn) => {
       const handler = async () => {
-        const raw = btn.getAttribute('data-code') || ''
-        const decoded = raw
-          .replace(/&quot;/g, '"')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-
-        try {
-          await navigator.clipboard.writeText(decoded)
-          const original = btn.textContent
-          btn.textContent = 'Copied!'
-          btn.classList.add('copied')
-          setTimeout(() => {
-            btn.textContent = original
-            btn.classList.remove('copied')
-          }, 2000)
-        } catch {
-          // Fallback: select + execCommand
+        const raw = (btn.getAttribute('data-code') || '')
+          .replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        try { await navigator.clipboard.writeText(raw) } catch {
           const ta = document.createElement('textarea')
-          ta.value = decoded
-          document.body.appendChild(ta)
-          ta.select()
-          document.execCommand('copy')
-          document.body.removeChild(ta)
-          btn.textContent = 'Copied!'
-          setTimeout(() => { btn.textContent = 'Copy' }, 2000)
+          ta.value = raw; document.body.appendChild(ta); ta.select()
+          document.execCommand('copy'); document.body.removeChild(ta)
         }
+        const orig = btn.textContent
+        btn.textContent = 'Copied!'; btn.classList.add('copied')
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied') }, 2000)
       }
       btn.addEventListener('click', handler)
-      handlers.push({ btn, handler })
+      handlers.push({ el: btn, handler })
     })
 
-    /* ── Make links open in new tab ── */
-    const links = root.querySelectorAll('a[href]')
-    links.forEach((a) => {
+    // Load favicons via JS (DOMPurify strips onerror)
+    root.querySelectorAll('.md-cite[data-favicon]').forEach((chip) => {
+      const url    = chip.getAttribute('data-favicon')
+      const iconEl = chip.querySelector('.md-cite-icon')
+      if (!iconEl || !url) return
+      const img = new Image()
+      img.onload = () => {
+        iconEl.style.backgroundImage = `url(${CSS.escape ? url : url})`
+        iconEl.classList.add('has-favicon')
+      }
+      img.onerror = () => iconEl.classList.add('letter-fallback')
+      img.src = url
+    })
+
+    // Open plain links in new tab
+    root.querySelectorAll('a[href]:not(.md-cite)').forEach((a) => {
       a.setAttribute('target', '_blank')
       a.setAttribute('rel', 'noopener noreferrer')
     })
 
-    return () => {
-      handlers.forEach(({ btn, handler }) => btn.removeEventListener('click', handler))
-    }
-  }, [content])
+    return () => handlers.forEach(({ el, handler }) => el.removeEventListener('click', handler))
+  }, [renderedHtml])
 
   return (
     <div
       ref={containerRef}
       className="md-body"
-      dangerouslySetInnerHTML={{ __html: html(content, isStreaming) }}
+      dangerouslySetInnerHTML={{ __html: renderedHtml }}
     />
   )
 }

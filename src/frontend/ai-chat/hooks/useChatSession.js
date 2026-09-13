@@ -139,13 +139,16 @@ export function useChatSession() {
   }, [])
 
   /* ── Update last message content (for streaming) ── */
-  const updateMessage = useCallback((sessionId, msgId, content) => {
+  const updateMessage = useCallback((sessionId, msgId, content, meta = {}) => {
     setSessions(prev =>
       prev.map(s => {
         if (s.id !== sessionId) return s
-        const messages = s.messages.map(m =>
-          m.id === msgId ? { ...m, content } : m
-        )
+        const messages = s.messages.map(m => {
+          if (m.id !== msgId) return m
+          const updated = { ...m, ...meta }
+          if (content !== null && content !== undefined) updated.content = content
+          return updated
+        })
         return { ...s, messages, updatedAt: Date.now() }
       })
     )
