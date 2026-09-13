@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
   process.env.GEMINI_API_KEY    = env.GEMINI_API_KEY || env.GOOGLE_GEMINI_API_KEY
   process.env.LANGSEARCH_API_KEY = env.LANGSEARCH_API_KEY
   process.env.SERPER_API_KEY     = env.SERPER_API_KEY
+  process.env.OLLAMA_BASE_URL    = env.OLLAMA_BASE_URL || ''
   // In dev, always treat .env.local as having higher priority than .env
   const localEnv = loadEnv(mode, process.cwd(), '')
   if (localEnv.NVIDIA_NIM_API_KEY) process.env.NVIDIA_NIM_API_KEY = localEnv.NVIDIA_NIM_API_KEY
@@ -22,6 +23,7 @@ export default defineConfig(({ mode }) => {
   }
   if (localEnv.LANGSEARCH_API_KEY) process.env.LANGSEARCH_API_KEY = localEnv.LANGSEARCH_API_KEY
   if (localEnv.SERPER_API_KEY)    process.env.SERPER_API_KEY    = localEnv.SERPER_API_KEY
+  if (localEnv.OLLAMA_BASE_URL)   process.env.OLLAMA_BASE_URL   = localEnv.OLLAMA_BASE_URL
 
   return {
     plugins: [react(), devApiProxy()],

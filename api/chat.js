@@ -52,6 +52,13 @@ const NIM_URL    = 'https://integrate.api.nvidia.com/v1/chat/completions'
 const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions'
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
 
+// Ollama — self-hosted via Tailscale / Google Colab tunnel.
+// Set OLLAMA_BASE_URL in your environment (e.g. http://100.x.x.x:11434).
+// Ollama exposes an OpenAI-compatible endpoint at /v1/chat/completions.
+// Falls back gracefully when the tunnel is offline (short timeout).
+const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '')
+const OLLAMA_URL      = OLLAMA_BASE_URL ? `${OLLAMA_BASE_URL}/v1/chat/completions` : null
+
 /**
  * Fallback order for auto mode: NIM → Groq → Gemini
  *
@@ -104,6 +111,9 @@ function remapGeminiModel(modelId) {
 function detectProvider(modelId) {
   if (!modelId) return { provider: 'nim', model: modelId }
 
+  if (modelId.startsWith('ollama/')) {
+    return { provider: 'ollama', model: modelId.slice(7) }
+  }
   if (modelId.startsWith('groq/')) {
     return { provider: 'groq', model: modelId.slice(5) }
   }
@@ -116,6 +126,7 @@ function detectProvider(modelId) {
 function getProviderUrl(provider) {
   if (provider === 'groq')   return GROQ_URL
   if (provider === 'gemini') return GEMINI_URL
+  if (provider === 'ollama') return OLLAMA_URL
   return NIM_URL
 }
 
@@ -178,8 +189,8 @@ function buildRequestBody(provider, modelId, finalMessages, opts) {
     return body
   }
 
-  // OpenAI-compatible (NIM and Groq)
-  const body = provider === 'groq'
+  // OpenAI-compatible (NIM, Groq, and Ollama)
+  const body = provider === 'groq' || provider === 'ollama'
     ? { messages: finalMessages, model: modelId, max_tokens, temperature, stream }
     : { messages: finalMessages, model: modelId, max_tokens, temperature, seed, stream }
   return body
@@ -220,16 +231,20 @@ function buildProviderRequest({ provider, modelId, finalMessages, opts, geminiKe
     }
   }
 
-  // OpenAI-compatible (NIM + Groq)
-  const apiKey = provider === 'groq' ? groqKey : nimKey
+  // OpenAI-compatible (NIM + Groq + Ollama)
+  const apiKey = provider === 'groq' ? groqKey : provider === 'ollama' ? null : nimKey
+  const headers = {
+    'Content-Type':  'application/json',
+    'Accept':        stream ? 'text/event-stream' : 'application/json',
+  }
+  // Ollama doesn't require an Authorization header (no API key)
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`
+  }
   return {
     url:     getProviderUrl(provider),
     body:    buildRequestBody(provider, modelId, finalMessages, opts),
-    headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-      'Accept':        stream ? 'text/event-stream' : 'application/json',
-    },
+    headers,
     apiKey,
     apiKeyMode: 'bearer',
   }
@@ -662,6 +677,15 @@ Follow these guidelines:
     }
   }
 
+  // Compact system prompt for Ollama — keeps TTFT low on local GPU.
+  function buildOllamaSystemPrompt(activeModel) {
+    return {
+      role: 'system',
+      content: `You are Nyx Agent, an AI assistant by CTRL Build. Model: ${activeModel} (Ollama, Self-hosted). Today: ${getCurrentDateString()}.
+Be concise and helpful. Use Markdown. Cite sources as [1][2] when search results are provided. Never invent facts.`,
+    }
+  }
+
   // System prompt is built per-model inside the loop below.
   const hasSystem = messages.some(m => m.role === 'system')
   // If client supplies their own system prompt, keep messages as-is.
@@ -675,13 +699,10 @@ Follow these guidelines:
   if (isAuto) {
     modelsToTry = AUTO_FALLBACK_ORDER
   } else {
+    // Non-auto: only try the selected model, no silent fallback.
+    // If it fails, the user gets a clear inline warning to pick another model.
     const { provider, model: rawModel } = detectProvider(model)
-    modelsToTry = [
-      { model: rawModel, provider },
-      ...AUTO_FALLBACK_ORDER.filter(
-        m => !(m.model === rawModel && m.provider === provider)
-      ),
-    ]
+    modelsToTry = [{ model: rawModel, provider }]
   }
 
   // Filter out providers without API keys
@@ -689,6 +710,8 @@ Follow these guidelines:
     if (m.provider === 'nim')    return !!nimKey
     if (m.provider === 'groq')   return !!groqKey
     if (m.provider === 'gemini') return !!geminiKey
+    // Ollama: only include if OLLAMA_BASE_URL is configured
+    if (m.provider === 'ollama') return !!OLLAMA_URL
     return false
   })
 
@@ -769,6 +792,18 @@ Follow these guidelines:
 
       // Tell the client the search is done (stop the searching animation)
       writeSSEEvent(res, { type: 'search_done', resultsCount: searchResult.results.length })
+
+      // Send structured source list so the frontend can render citation chips
+      // with favicon + domain without relying on the AI to format a Sources block
+      const sourcesPayload = searchResult.results.slice(0, 8).map((r, i) => ({
+        index:  i + 1,
+        title:  r.title  || '',
+        url:    r.url    || r.link || '',
+        domain: (() => {
+          try { return new URL(r.url || r.link || '').hostname.replace(/^www\./, '') } catch { return r.url || '' }
+        })(),
+      }))
+      writeSSEEvent(res, { type: 'sources', sources: sourcesPayload })
     }
   }
 
@@ -780,8 +815,10 @@ Follow these guidelines:
     // for each attempt, so the AI always knows which model it's running on.
     let messagesForThisAttempt
     if (!hasSystem) {
-      // Build per-model system prompt with correct identity
-      const sysPrompt = buildSystemPrompt(tryModel, provider)
+      // Build per-model system prompt — compact version for Ollama to reduce TTFT
+      const sysPrompt = provider === 'ollama'
+        ? buildOllamaSystemPrompt(tryModel)
+        : buildSystemPrompt(tryModel, provider)
       // User-provided messages (no system msg from client)
       const userTurns = messages
       if (didSearch && searchResult) {
@@ -812,6 +849,11 @@ Follow these guidelines:
       groqKey,
     })
 
+    // Guard: if Ollama URL is not set (env not configured), skip it
+    if (provider === 'ollama' && !OLLAMA_URL) {
+      console.warn('[ollama] OLLAMA_BASE_URL not set — skipping')
+      if (!isLast) continue
+    }
     // Gemini uses ?key=… as a query param instead of Authorization header
     const finalUrl = request.apiKeyMode === 'query'
       ? `${request.url}&key=${encodeURIComponent(request.apiKey)}`
@@ -827,9 +869,16 @@ Follow these guidelines:
       return
     }
 
-    // AbortController with 6-second timeout — covers the initial connection.
+    // AbortController with timeout — covers the initial connection.
+    // Ollama: use a longer timeout (90s) to allow for cold-start model
+    // loading (first request after device idle can take 15-60s to load
+    // tensors into memory). If the tunnel is truly offline the TCP
+    // handshake / TLS will fail almost immediately anyway, so we don't
+    // need a short timeout to detect that case.
+    // Other providers get 6s (cloud APIs respond quickly or not at all).
+    const connectTimeoutMs = provider === 'ollama' ? 90000 : 6000
     const controller = new AbortController()
-    const timeoutId  = setTimeout(() => controller.abort(), 6000)
+    const timeoutId  = setTimeout(() => controller.abort(), connectTimeoutMs)
 
     try {
       const apiResponse = await fetch(finalUrl, {
@@ -918,7 +967,12 @@ Follow these guidelines:
 
       if (error.name === 'AbortError') {
         // Timeout — skip to next model
-        console.warn(`[${provider}] ${tryModel} timed out after 6s`)
+        // For Ollama: tunnel is likely offline, fail fast with a clear log
+        if (provider === 'ollama') {
+          console.warn(`[ollama] ${tryModel} timed out — tunnel may be offline, falling back`)
+        } else {
+          console.warn(`[${provider}] ${tryModel} timed out`)
+        }
         if (!isLast) {
           console.warn('[chat] Trying next model...')
           continue
