@@ -3,9 +3,10 @@
     "target": "esnext",
     "module": "esnext",
     "jsx": "preserve",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": false,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": ["vite/client"]
   },
   "include": ["src/**/*"],
   "exclude": ["src/backend", "node_modules"]

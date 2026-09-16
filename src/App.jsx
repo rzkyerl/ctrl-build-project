@@ -3,20 +3,24 @@ import { useEffect, useRef } from 'react'
 import Lenis from '@studio-freight/lenis'
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 
-// User
-import { Navbar }               from './frontend/user/layout/navbar'
-import { Footer }               from './frontend/user/layout/footer'
-import { HomePage }             from './frontend/user/pages/Home'
-import { PortofolioDetail }     from './frontend/user/sections/portofolio-detail'
-import { PortofolioMoreDetail } from './frontend/user/sections/portofolio-more-detail'
+// User layout (always needed — rendered on every public route)
+import { Navbar } from './frontend/user/layout/navbar'
+import { Footer } from './frontend/user/layout/footer'
 
-// Admin layout & auth
+// Admin layout & auth (small, no heavy deps)
 import { AdminLayout }    from './frontend/admin/components/AdminLayout'
 import { ProtectedRoute } from './frontend/admin/components/ProtectedRoute'
 import Login              from './frontend/admin/pages/Login'
 
-// Admin pages — lazy-loaded to keep public bundle small
+// Lazy-loaded pages — keeps three.js out of the initial bundle
 import { lazy, Suspense } from 'react'
+
+// Public user pages — lazy so three.js (via HeroSection) only loads when visiting /
+const HomePage             = lazy(() => import('./frontend/user/pages/Home').then(m => ({ default: m.HomePage })))
+const PortofolioDetail     = lazy(() => import('./frontend/user/sections/portofolio-detail').then(m => ({ default: m.PortofolioDetail })))
+const PortofolioMoreDetail = lazy(() => import('./frontend/user/sections/portofolio-more-detail').then(m => ({ default: m.PortofolioMoreDetail })))
+
+// Admin pages
 const Dashboard       = lazy(() => import('./frontend/admin/pages/Dashboard'))
 const PortfolioList   = lazy(() => import('./frontend/admin/pages/portfolio/index'))
 const PortfolioCreate = lazy(() => import('./frontend/admin/pages/portfolio/create'))
@@ -25,6 +29,9 @@ const PortfolioDetail = lazy(() => import('./frontend/admin/pages/portfolio/deta
 const StackList       = lazy(() => import('./frontend/admin/pages/stack/index'))
 const StackCreate     = lazy(() => import('./frontend/admin/pages/stack/create'))
 const StackEdit       = lazy(() => import('./frontend/admin/pages/stack/edit'))
+
+// Nyx Agent SPA — lazy-loaded
+const NyxAgentPage = lazy(() => import('./frontend/nyx-agent/pages/NyxAgentPage'))
 
 /* Admin loading fallback */
 function AdminFallback() {
@@ -182,23 +189,42 @@ function MagneticEffect() {
   return null
 }
 
+/* Hostname-based subdomain detection for production */
+function getSubdomain() {
+  const hostname = window.location.hostname
+  if (hostname === 'agent.ctrl-build.my.id') return 'nyx-agent'
+  if (
+    hostname === 'dashboard.ctrl-build.my.id' ||
+    hostname === 'www.dashboard.ctrl-build.my.id'
+  ) return 'admin'
+  return null
+}
+
 /* App */
 function App() {
   const location     = useLocation()
-  const isAdminRoute = location.pathname.startsWith('/admin')
+  const subdomain    = getSubdomain()
+
+  // Production: subdomain overrides path-based detection
+  const isAdminRoute = subdomain === 'admin'     || (!subdomain && location.pathname.startsWith('/admin'))
+  const isNyxRoute   = subdomain === 'nyx-agent' || (!subdomain && location.pathname.startsWith('/nyx-agent'))
+
+  // Routes that use default cursor (no custom cursor / lenis / magnetic)
+  const isAppRoute = isAdminRoute || isNyxRoute
 
   useEffect(() => {
-    if (isAdminRoute) {
+    if (isAppRoute) {
       document.body.style.cursor = 'auto'
-      document.body.dataset.adminPage = 'true'
+      if (isAdminRoute) document.body.dataset.adminPage = 'true'
+      else delete document.body.dataset.adminPage
     } else {
       document.body.style.cursor = 'none'
       delete document.body.dataset.adminPage
     }
-  }, [isAdminRoute])
+  }, [isAppRoute, isAdminRoute])
 
   useEffect(() => {
-    if (isAdminRoute) return
+    if (isAppRoute) return
     const lenis = new Lenis({
       duration: 1.4,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -211,20 +237,48 @@ function App() {
     const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf) }
     rafId = requestAnimationFrame(raf)
     return () => { cancelAnimationFrame(rafId); lenis.destroy() }
-  }, [isAdminRoute])
+  }, [isAppRoute])
 
   useEffect(() => { window.scrollTo(0, 0) }, [location.pathname])
+
+  if (isNyxRoute) {
+    return (
+      <Suspense fallback={<AdminFallback />}>
+        <Routes>
+          {/* Production: agent.ctrl-build.my.id → / */}
+          <Route path="/"          element={<NyxAgentPage />} />
+          {/* Localhost: localhost:5173/nyx-agent */}
+          <Route path="/nyx-agent" element={<NyxAgentPage />} />
+        </Routes>
+      </Suspense>
+    )
+  }
 
   if (isAdminRoute) {
     return (
       <Suspense fallback={<AdminFallback />}>
         <Routes>
-          {/* Public admin route */}
+          {/* Production: dashboard.ctrl-build.my.id → /login (root) */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Localhost: localhost:5173/admin/login */}
           <Route path="/admin/login" element={<Login />} />
 
           {/* Protected admin routes — wrapped in AdminLayout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AdminLayout />}>
+              {/* Production root redirects to dashboard */}
+              <Route path="/"                               element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard"                      element={<Dashboard />} />
+              <Route path="/portfolios"                     element={<PortfolioList />} />
+              <Route path="/portfolios/create"              element={<PortfolioCreate />} />
+              <Route path="/portfolios/:id"                 element={<PortfolioDetail />} />
+              <Route path="/portfolios/:id/edit"            element={<PortfolioEdit />} />
+              <Route path="/stacks"                         element={<StackList />} />
+              <Route path="/stacks/create"                  element={<StackCreate />} />
+              <Route path="/stacks/:id/edit"                element={<StackEdit />} />
+
+              {/* Localhost: /admin/* paths */}
               <Route path="/admin"                          element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/dashboard"                element={<Dashboard />} />
               <Route path="/admin/portfolios"               element={<PortfolioList />} />
@@ -247,11 +301,13 @@ function App() {
       <CustomCursor />
       <MagneticEffect />
       <Navbar />
-      <Routes>
-        <Route path="/"             element={<HomePage />} />
-        <Route path="/projects"     element={<PortofolioDetail />} />
-        <Route path="/projects/:id" element={<PortofolioMoreDetail />} />
-      </Routes>
+      <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+        <Routes>
+          <Route path="/"             element={<HomePage />} />
+          <Route path="/projects"     element={<PortofolioDetail />} />
+          <Route path="/projects/:id" element={<PortofolioMoreDetail />} />
+        </Routes>
+      </Suspense>
       <Footer />
     </div>
   )

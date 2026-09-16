@@ -1,0 +1,147 @@
+/* ═══════════════════════════════════════════════════
+   NYX AGENT — Global Styles & Theme Variables
+   Monochrome SPA — Hermes-inspired layout
+═══════════════════════════════════════════════════ */
+
+/* ── Theme Tokens ─────────────────────────────────── */
+:root {
+  /* Background */
+  --nyx-bg:          #0a0a0a;
+  --nyx-surface:     #111111;
+  --nyx-surface-2:  #161616;
+  --nyx-surface-3:  #1e1e1e;
+  --nyx-surface-4:  #2a2a2a;
+
+  /* Border */
+  --nyx-border:        rgba(255,255,255,0.08);
+  --nyx-border-hover:  rgba(255,255,255,0.18);
+  --nyx-border-strong: rgba(255,255,255,0.28);
+
+  /* Text */
+  --nyx-text:       #ffffff;
+  --nyx-text-dim:   rgba(255,255,255,0.50);
+  --nyx-text-mute:  rgba(255,255,255,0.28);
+  --nyx-text-faint: rgba(255,255,255,0.14);
+
+  /* Accent (pure monochrome) */
+  --nyx-accent:     #ffffff;
+  --nyx-accent-inv: #000000;
+
+  /* Typography */
+  --nyx-font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --nyx-font-body:    'Inter', system-ui, sans-serif;
+  --nyx-font-serif:   'Playfair Display', 'EB Garamond', Georgia, serif;
+  --nyx-font-mono:    'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* Easing */
+  --nyx-ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --nyx-ease-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --nyx-ease-io:   cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Layout */
+  --nyx-max-w:      1200px;
+  --nyx-nav-h:      64px;
+}
+
+/* ═══════════════════════════════════════════════════
+   ROOT LAYOUT
+═══════════════════════════════════════════════════ */
+.nyx-root {
+  font-family: var(--nyx-font-body);
+  background: var(--nyx-bg);
+  color: var(--nyx-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+}
+
+.nyx-root * {
+  box-sizing: border-box;
+}
+
+/* Restore default cursor for nyx-agent */
+.nyx-root,
+.nyx-root * {
+  cursor: auto !important;
+}
+.nyx-root button,
+.nyx-root a,
+.nyx-root [role="button"] {
+  cursor: pointer !important;
+}
+.nyx-root input,
+.nyx-root textarea {
+  cursor: text !important;
+}
+
+/* Grain overlay (inherits from global, but scoped) */
+.nyx-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9998;
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════════
+   SHARED UTILITIES
+═══════════════════════════════════════════════════ */
+.nyx-container {
+  max-width: var(--nyx-max-w);
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Section label — small caps meta text */
+.nyx-label {
+  display: inline-block;
+  font-family: var(--nyx-font-body);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--nyx-text-mute);
+}
+
+/* Scroll reveal */
+.nyx-reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 0.9s var(--nyx-ease-expo),
+    transform 0.9s var(--nyx-ease-expo);
+}
+.nyx-reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Blur reveal */
+.nyx-reveal-blur {
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(20px);
+  transition:
+    opacity 1s var(--nyx-ease-expo),
+    filter 1s var(--nyx-ease-expo),
+    transform 1s var(--nyx-ease-expo);
+}
+.nyx-reveal-blur.in-view {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .nyx-container {
+    padding: 0 1.5rem;
+  }
+}
