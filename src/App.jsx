@@ -31,7 +31,8 @@ const StackCreate     = lazy(() => import('./frontend/admin/pages/stack/create')
 const StackEdit       = lazy(() => import('./frontend/admin/pages/stack/edit'))
 
 // Nyx Agent SPA — lazy-loaded
-const NyxAgentPage = lazy(() => import('./frontend/nyx-agent/pages/NyxAgentPage'))
+const NyxAgentPage    = lazy(() => import('./frontend/nyx-agent/pages/NyxAgentPage'))
+const NyxMaintenance  = lazy(() => import('./frontend/nyx-agent/sections/maintenance').then(m => ({ default: m.NyxMaintenance })))
 
 /* Admin loading fallback */
 function AdminFallback() {
@@ -246,9 +247,12 @@ function App() {
       <Suspense fallback={<AdminFallback />}>
         <Routes>
           {/* Production: agent.ctrl-build.my.id → / */}
-          <Route path="/"          element={<NyxAgentPage />} />
+          <Route path="/"                element={<NyxAgentPage />} />
           {/* Localhost: localhost:5173/nyx-agent */}
-          <Route path="/nyx-agent" element={<NyxAgentPage />} />
+          <Route path="/nyx-agent"       element={<NyxAgentPage />} />
+          {/* Chat maintenance — production: agent.ctrl-build.my.id/chat, localhost: /nyx-agent/chat */}
+          <Route path="/chat"            element={<NyxMaintenance />} />
+          <Route path="/nyx-agent/chat"  element={<NyxMaintenance />} />
         </Routes>
       </Suspense>
     )
