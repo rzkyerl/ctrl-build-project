@@ -64,9 +64,11 @@ function ThreeNetwork() {
 
     const THRESH2 = 100
     let rafId: number, t = 0
+    let paused = false
 
     function animate() {
       rafId = requestAnimationFrame(animate)
+      if (paused) return
       t += .005
       for (let i = 0; i < N; i++) {
         px[i] += vx[i]; py[i] += vy[i]; pz[i] += vz[i]
@@ -95,6 +97,12 @@ function ThreeNetwork() {
     }
     animate()
 
+    // Pause rAF loop when the hero is not visible
+    const visObs = new IntersectionObserver(([entry]) => {
+      paused = !entry.isIntersecting
+    }, { threshold: 0 })
+    visObs.observe(el)
+
     const onMove = (e: MouseEvent) => { mouseRef.current = { x:(e.clientX/W-.5)*2, y:-(e.clientY/H-.5)*2 } }
     const onResize = () => { W=el.offsetWidth; H=el.offsetHeight; camera.aspect=W/H; camera.updateProjectionMatrix(); renderer.setSize(W,H) }
     window.addEventListener('mousemove', onMove, { passive: true })
@@ -102,6 +110,7 @@ function ThreeNetwork() {
 
     return () => {
       cancelAnimationFrame(rafId)
+      visObs.disconnect()
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('resize', onResize)
       renderer.dispose()
@@ -226,6 +235,11 @@ function RobotScene() {
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
+
+    // Skip initialization on mobile — the panel is display:none via CSS anyway,
+    // but we also avoid wasting a WebGL context + network fetch for the GLB.
+    if (window.innerWidth <= 768) return
+
     let W = el.offsetWidth, H = el.offsetHeight
 
     const scene  = new THREE.Scene()
@@ -284,6 +298,7 @@ function RobotScene() {
     let robot: THREE.Group | null = null
     let mixer: THREE.AnimationMixer | null = null
     let rafId: number, t = 0
+    let paused = false
 
     const loader = new GLTFLoader()
     loader.load(
@@ -339,6 +354,7 @@ function RobotScene() {
     const clock = new THREE.Clock()
     function animate() {
       rafId = requestAnimationFrame(animate)
+      if (paused) return
       t += 0.016
       const delta = clock.getDelta()
 
@@ -364,6 +380,12 @@ function RobotScene() {
     }
     animate()
 
+    // Pause rAF loop when the hero is not visible
+    const visObs = new IntersectionObserver(([entry]) => {
+      paused = !entry.isIntersecting
+    }, { threshold: 0 })
+    visObs.observe(el)
+
     const onResize = () => {
       W = el.offsetWidth; H = el.offsetHeight
       camera.aspect = W / H; camera.updateProjectionMatrix()
@@ -373,6 +395,7 @@ function RobotScene() {
 
     return () => {
       cancelAnimationFrame(rafId)
+      visObs.disconnect()
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('resize', onResize)
       renderer.dispose()
