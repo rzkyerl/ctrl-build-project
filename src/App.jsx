@@ -194,6 +194,7 @@ function MagneticEffect() {
 function getSubdomain() {
   const hostname = window.location.hostname
   if (hostname === 'agent.ctrl-build.my.id') return 'nyx-agent'
+  if (hostname === 'chat.ctrl-build.my.id')  return 'nyx-chat'
   if (
     hostname === 'dashboard.ctrl-build.my.id' ||
     hostname === 'www.dashboard.ctrl-build.my.id'
@@ -209,9 +210,10 @@ function App() {
   // Production: subdomain overrides path-based detection
   const isAdminRoute = subdomain === 'admin'     || (!subdomain && location.pathname.startsWith('/admin'))
   const isNyxRoute   = subdomain === 'nyx-agent' || (!subdomain && location.pathname.startsWith('/nyx-agent'))
+  const isChatRoute  = subdomain === 'nyx-chat'
 
   // Routes that use default cursor (no custom cursor / lenis / magnetic)
-  const isAppRoute = isAdminRoute || isNyxRoute
+  const isAppRoute = isAdminRoute || isNyxRoute || isChatRoute
 
   useEffect(() => {
     if (isAppRoute) {
@@ -241,6 +243,14 @@ function App() {
   }, [isAppRoute])
 
   useEffect(() => { window.scrollTo(0, 0) }, [location.pathname])
+
+  if (isChatRoute) {
+    return (
+      <Suspense fallback={<AdminFallback />}>
+        <NyxMaintenance />
+      </Suspense>
+    )
+  }
 
   if (isNyxRoute) {
     return (
