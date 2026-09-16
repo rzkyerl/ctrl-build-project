@@ -40,25 +40,28 @@ export function NyxFeatures() {
        Instead: when section reaches top of viewport, switch bg
        to position:fixed so it stays locked. When section leaves
        viewport bottom, switch back to absolute (bottom-anchored).
+       rAF-throttled to avoid forced layout recalc on every scroll event.
     */
+    let scrollRaf: number | null = null
     const onScroll = () => {
-      const rect = section.getBoundingClientRect()
-      const sectionTop    = rect.top
-      const sectionBottom = rect.bottom
+      if (scrollRaf !== null) return
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = null
+        const rect = section!.getBoundingClientRect()
+        const sectionTop    = rect.top
+        const sectionBottom = rect.bottom
 
-      if (sectionTop <= 0 && sectionBottom > 0) {
-        // Section spanning viewport — bg fixed (locked)
-        bg.classList.add('is-fixed')
-        bg.classList.remove('is-bottom')
-      } else if (sectionBottom <= 0) {
-        // Section fully scrolled past — anchor bg to section bottom
-        bg.classList.remove('is-fixed')
-        bg.classList.add('is-bottom')
-      } else {
-        // Section not yet reached — normal position at top
-        bg.classList.remove('is-fixed')
-        bg.classList.remove('is-bottom')
-      }
+        if (sectionTop <= 0 && sectionBottom > 0) {
+          bg!.classList.add('is-fixed')
+          bg!.classList.remove('is-bottom')
+        } else if (sectionBottom <= 0) {
+          bg!.classList.remove('is-fixed')
+          bg!.classList.add('is-bottom')
+        } else {
+          bg!.classList.remove('is-fixed')
+          bg!.classList.remove('is-bottom')
+        }
+      })
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -66,6 +69,7 @@ export function NyxFeatures() {
 
     return () => {
       revealObs.disconnect()
+      if (scrollRaf !== null) cancelAnimationFrame(scrollRaf)
       window.removeEventListener('scroll', onScroll)
     }
   }, [])

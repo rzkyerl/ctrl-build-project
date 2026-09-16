@@ -3,20 +3,24 @@ import { useEffect, useRef } from 'react'
 import Lenis from '@studio-freight/lenis'
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 
-// User
-import { Navbar }               from './frontend/user/layout/navbar'
-import { Footer }               from './frontend/user/layout/footer'
-import { HomePage }             from './frontend/user/pages/Home'
-import { PortofolioDetail }     from './frontend/user/sections/portofolio-detail'
-import { PortofolioMoreDetail } from './frontend/user/sections/portofolio-more-detail'
+// User layout (always needed — rendered on every public route)
+import { Navbar } from './frontend/user/layout/navbar'
+import { Footer } from './frontend/user/layout/footer'
 
-// Admin layout & auth
+// Admin layout & auth (small, no heavy deps)
 import { AdminLayout }    from './frontend/admin/components/AdminLayout'
 import { ProtectedRoute } from './frontend/admin/components/ProtectedRoute'
 import Login              from './frontend/admin/pages/Login'
 
-// Admin pages — lazy-loaded to keep public bundle small
+// Lazy-loaded pages — keeps three.js out of the initial bundle
 import { lazy, Suspense } from 'react'
+
+// Public user pages — lazy so three.js (via HeroSection) only loads when visiting /
+const HomePage             = lazy(() => import('./frontend/user/pages/Home').then(m => ({ default: m.HomePage })))
+const PortofolioDetail     = lazy(() => import('./frontend/user/sections/portofolio-detail').then(m => ({ default: m.PortofolioDetail })))
+const PortofolioMoreDetail = lazy(() => import('./frontend/user/sections/portofolio-more-detail').then(m => ({ default: m.PortofolioMoreDetail })))
+
+// Admin pages
 const Dashboard       = lazy(() => import('./frontend/admin/pages/Dashboard'))
 const PortfolioList   = lazy(() => import('./frontend/admin/pages/portfolio/index'))
 const PortfolioCreate = lazy(() => import('./frontend/admin/pages/portfolio/create'))
@@ -25,9 +29,6 @@ const PortfolioDetail = lazy(() => import('./frontend/admin/pages/portfolio/deta
 const StackList       = lazy(() => import('./frontend/admin/pages/stack/index'))
 const StackCreate     = lazy(() => import('./frontend/admin/pages/stack/create'))
 const StackEdit       = lazy(() => import('./frontend/admin/pages/stack/edit'))
-
-// AI Chat page — lazy-loaded
-const AiChatPage = lazy(() => import('./frontend/ai-chat/AiChatPage'))
 
 // Nyx Agent SPA — lazy-loaded
 const NyxAgentPage = lazy(() => import('./frontend/nyx-agent/pages/NyxAgentPage'))
@@ -192,7 +193,6 @@ function MagneticEffect() {
 function getSubdomain() {
   const hostname = window.location.hostname
   if (hostname === 'agent.ctrl-build.my.id') return 'nyx-agent'
-  if (hostname === 'chat.ctrl-build.my.id')  return 'chat'
   if (
     hostname === 'dashboard.ctrl-build.my.id' ||
     hostname === 'www.dashboard.ctrl-build.my.id'
@@ -206,12 +206,11 @@ function App() {
   const subdomain    = getSubdomain()
 
   // Production: subdomain overrides path-based detection
-  const isAdminRoute = subdomain === 'admin'  || (!subdomain && location.pathname.startsWith('/admin'))
-  const isChatRoute  = subdomain === 'chat'   || (!subdomain && location.pathname.startsWith('/nyx-agent/chat'))
+  const isAdminRoute = subdomain === 'admin'     || (!subdomain && location.pathname.startsWith('/admin'))
   const isNyxRoute   = subdomain === 'nyx-agent' || (!subdomain && location.pathname.startsWith('/nyx-agent'))
 
   // Routes that use default cursor (no custom cursor / lenis / magnetic)
-  const isAppRoute = isAdminRoute || isChatRoute || isNyxRoute
+  const isAppRoute = isAdminRoute || isNyxRoute
 
   useEffect(() => {
     if (isAppRoute) {
@@ -241,22 +240,6 @@ function App() {
   }, [isAppRoute])
 
   useEffect(() => { window.scrollTo(0, 0) }, [location.pathname])
-
-  // Chat route takes priority over nyx-agent (more specific path)
-  if (isChatRoute) {
-    return (
-      <Suspense fallback={<AdminFallback />}>
-        <Routes>
-          {/* Production: chat.ctrl-build.my.id → / */}
-          <Route path="/"                        element={<AiChatPage />} />
-          <Route path="/:sessionId"              element={<AiChatPage />} />
-          {/* Localhost: localhost:5173/nyx-agent/chat */}
-          <Route path="/nyx-agent/chat"          element={<AiChatPage />} />
-          <Route path="/nyx-agent/chat/:sessionId" element={<AiChatPage />} />
-        </Routes>
-      </Suspense>
-    )
-  }
 
   if (isNyxRoute) {
     return (
@@ -318,11 +301,13 @@ function App() {
       <CustomCursor />
       <MagneticEffect />
       <Navbar />
-      <Routes>
-        <Route path="/"             element={<HomePage />} />
-        <Route path="/projects"     element={<PortofolioDetail />} />
-        <Route path="/projects/:id" element={<PortofolioMoreDetail />} />
-      </Routes>
+      <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+        <Routes>
+          <Route path="/"             element={<HomePage />} />
+          <Route path="/projects"     element={<PortofolioDetail />} />
+          <Route path="/projects/:id" element={<PortofolioMoreDetail />} />
+        </Routes>
+      </Suspense>
       <Footer />
     </div>
   )

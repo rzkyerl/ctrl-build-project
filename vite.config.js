@@ -40,9 +40,9 @@ export default defineConfig(({ mode }) => {
               return 'vendor-three'
             }
 
-            // @splinetool — pisahkan jika suatu saat diaktifkan kembali
-            if (id.includes('@splinetool')) {
-              return 'vendor-spline'
+            // framer-motion — dipakai di testimonial, pisahkan dari vendor utama
+            if (id.includes('node_modules/framer-motion')) {
+              return 'vendor-motion'
             }
 
             // react-router-dom + react-router
