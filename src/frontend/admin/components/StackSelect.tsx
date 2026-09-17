@@ -41,12 +41,12 @@ export const StackSelect: React.FC<StackSelectProps> = ({ selected, onChange }) 
   )
 
   return (
-    <div className="ad-stack-select">
+    <div className="cb-portfolio-stack-select">
       {stacks.map(stack => (
         <button
           key={stack._id}
           type="button"
-          className={`ad-stack-chip${selected.includes(stack._id) ? ' selected' : ''}`}
+          className={`cb-portfolio-stack-chip${selected.includes(stack._id) ? ' selected' : ''}`}
           onClick={() => toggle(stack)}
         >
           {stack.iconUrl && <img src={stack.iconUrl} alt={stack.name} />}

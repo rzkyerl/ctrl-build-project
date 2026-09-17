@@ -1,44 +1,57 @@
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import '../styles/css/portofolio-more-detail.css'
 
-// Import project images (reusing existing ones)
-import img3nt from '../../../assets/images/portofolio/3nt-studio/3nt-home-mockup-opt.webp'
-import imgBookingin from '../../../assets/images/portofolio/bookingin/bookingin-home-mockup-opt.webp'
-import imgEktm from '../../../assets/images/portofolio/ektm/HomePages.webp'
-import imgBerbagi from '../../../assets/images/portofolio/berbagilagi/berbagi-home-mockup-opt.webp'
-import imgTheDays from '../../../assets/images/portofolio/the-days/thedays-home-mockup-opt.webp'
-import imgAnagata from '../../../assets/images/portofolio/anagata-executive/anagata-home-mockup.webp'
-
-const projectDetails = {
-  '3nt-studio': {
-    title: '3NT Studio - Website Photostudio',
-    category: 'Web Development',
-    img: img3nt,
-    overview: 'Proyek ini adalah 3NT Studio, sebuah platform website premium yang berfungsi sebagai Portfolio Fotografi & Sistem Booking Otomatis. Website ini dirancang dengan estetika modern, minimalis, dan monokromatik untuk memberikan kesan mewah dan profesional bagi sebuah studio foto.',
-    goals: 'Proyek ini bertujuan untuk menjadi etalase digital bagi 3NT Studio dalam memamerkan karya fotografi mereka sekaligus menyediakan sistem manajemen pemesanan (booking) yang terintegrasi bagi calon klien.',
-    features: [
-      { title: 'Portfolio Dinamis', desc: 'Galeri foto yang dapat dikelola secara langsung melalui Sanity CMS dengan efek visual menarik.' },
-      { title: 'Sistem Booking Otomatis', desc: 'Pengguna dapat memilih paket dan tanggal pemesanan dengan konfirmasi PDF real-time.' },
-      { title: 'Interactive Photobooth', desc: 'Fitur unik untuk mengambil foto monokrom langsung dari browser.' },
-      { title: 'Cinematic Hero Section', desc: 'Latar belakang video layar penuh dan animasi tipografi yang halus.' },
-      { title: 'Admin Dashboard', desc: 'Dashboard berbasis Sanity Studio untuk mengelola konten dan reservasi.' }
-    ],
-    architecture: 'Proyek ini menggunakan arsitektur modern yang memisahkan Frontend (React 19 + Vite + Tailwind CSS 4) dan Backend/CMS (Sanity.io).',
-    techStack: ['React 19', 'Vite', 'Tailwind CSS 4', 'Sanity CMS', 'Framer Motion', 'jsPDF', 'TypeScript'],
-    link: 'https://3nt-studio.vercel.app'
-  },
-  // Add more projects as needed
+interface ProjectDetail {
+  _id: string
+  title: string
+  category: string
+  slug: { current: string }
+  imageUrl?: string
+  overview?: string
+  goals?: string
+  features?: { title: string; desc: string }[]
+  architecture?: string
+  techStack?: { _id: string; name: string; iconUrl?: string }[]
+  link?: string
 }
 
 export const PortofolioMoreDetail = () => {
-  const { id } = useParams()
-  const project = projectDetails[id as keyof typeof projectDetails]
+  const { id } = useParams<{ id: string }>()
+  const [project, setProject] = useState<ProjectDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  if (!project) {
+  useEffect(() => {
+    if (!id) return
+    fetch(`/api/portfolios/slug/${id}`)
+      .then(res => {
+        if (res.status === 404) return null
+        if (!res.ok) return res.json().then((body: any) => Promise.reject(new Error(body?.error || 'Unable to load project.')))
+        return res.json()
+      })
+      .then(result => {
+        if (!result) return
+        if (!result.success) throw new Error(result.error || 'Unable to load project.')
+        setProject(result.data)
+      })
+      .catch(err => setError(err.message || 'Unable to load project.'))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading) {
     return (
-      <div className="project-more-detail" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="project-more-detail" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <p style={{ color: '#aaa' }}>Loading project...</p>
+      </div>
+    )
+  }
+
+  if (error || !project) {
+    return (
+      <div className="project-more-detail" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center' }}>
-          <h2>Project Not Found</h2>
+          <h2>{error || 'Project Not Found'}</h2>
           <Link to="/projects" style={{ color: '#fff', marginTop: '20px', display: 'inline-block' }}>Back to Portfolio</Link>
         </div>
       </div>
@@ -55,7 +68,11 @@ export const PortofolioMoreDetail = () => {
         </header>
 
         <div className="detail-hero-img">
-          <img src={project.img} alt={project.title} />
+          {project.imageUrl ? (
+            <img src={project.imageUrl} alt={project.title} />
+          ) : (
+            <div style={{ width:'100%', height:'100%', background:'#111', display:'flex', alignItems:'center', justifyContent:'center', color:'#666' }}>No image</div>
+          )}
         </div>
 
         <div className="detail-content">
@@ -67,8 +84,8 @@ export const PortofolioMoreDetail = () => {
             <div className="sidebar-item">
               <h3>Technology</h3>
               <ul>
-                {project.techStack.map(tech => (
-                  <li key={tech} className="tech-tag">{tech}</li>
+                {project.techStack?.map((tech) => (
+                  <li key={tech._id} className="tech-tag">{tech.name}</li>
                 ))}
               </ul>
             </div>
@@ -101,7 +118,7 @@ export const PortofolioMoreDetail = () => {
             <section className="detail-section">
               <h2>Core Features</h2>
               <div className="feature-list">
-                {project.features.map(feature => (
+                {project.features?.map((feature) => (
                   <div key={feature.title} className="feature-item">
                     <h4>{feature.title}</h4>
                     <p>{feature.desc}</p>

@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
-import { sanityClient } from '../../../../backend/lib/sanity'
 
 interface Stack {
   _id: string
   name: string
   slug: { current: string }
-  icon?: { asset?: { url: string } }
+  iconUrl?: string
 }
 
 const StackList: React.FC = () => {
@@ -19,13 +18,11 @@ const StackList: React.FC = () => {
 
   const fetchStacks = async () => {
     try {
-      const data = await sanityClient.fetch<Stack[]>(`
-        *[_type == "stack"] | order(name asc) {
-          _id, name, slug,
-          "icon": icon { asset->{ url } }
-        }
-      `)
-      setStacks(data)
+      const res = await fetch('/api/stacks')
+      if (!res.ok) throw new Error('Network response was not ok')
+      const result = await res.json()
+      if (!result.success) throw new Error(result.error || 'Failed to load stacks.')
+      setStacks(result.data)
     } catch {
       setError('Failed to load stacks.')
     } finally {
@@ -39,7 +36,14 @@ const StackList: React.FC = () => {
     if (!deleteId) return
     setDeleting(true)
     try {
-      await fetch(`/api/stacks/${deleteId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/stacks/${deleteId}`, { method: 'DELETE' })
+      if (res.status === 409) {
+        const body = await res.json().catch(() => ({ error: 'Cannot delete this technology because it is used by portfolio projects.' }))
+        setError(body.error || 'Cannot delete this technology because it is used by portfolio projects.')
+        setDeleteId(null)
+        return
+      }
+      if (!res.ok) throw new Error(await res.text())
       setStacks(prev => prev.filter(s => s._id !== deleteId))
     } catch {
       setError('Failed to delete stack.')
@@ -75,17 +79,17 @@ const StackList: React.FC = () => {
           </Link>
         </div>
       ) : (
-        <div className="ad-stack-grid">
+        <div className="cb-stack-grid">
           {stacks.map(stack => (
-            <div key={stack._id} className="ad-stack-card">
-              {stack.icon?.asset?.url ? (
-                <img src={stack.icon.asset.url} alt={stack.name} className="ad-stack-card-icon" />
+            <div key={stack._id} className="cb-stack-card">
+              {stack.iconUrl ? (
+                <img src={stack.iconUrl} alt={stack.name} className="cb-stack-card-icon" />
               ) : (
-                <div className="ad-stack-card-icon-placeholder">?</div>
+                <div className="cb-stack-card-icon-placeholder">?</div>
               )}
-              <div className="ad-stack-card-name">{stack.name}</div>
-              <div className="ad-stack-card-slug">{stack.slug?.current}</div>
-              <div className="ad-stack-card-actions">
+              <div className="cb-stack-card-name">{stack.name}</div>
+              <div className="cb-stack-card-slug">{stack.slug?.current}</div>
+              <div className="cb-stack-card-actions">
                 <Link
                   to={`/admin/stacks/${stack._id}/edit`}
                   className="ad-btn ad-btn-ghost ad-btn-sm"
