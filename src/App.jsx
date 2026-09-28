@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react'
 import Lenis from '@studio-freight/lenis'
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
+import nyxFavicon from './assets/images/nyx-agent/icon-mark-tab.png'
 
 // User layout (always needed — rendered on every public route)
 import { Navbar } from './frontend/user/layout/navbar'
@@ -211,6 +212,7 @@ function App() {
   const isAdminRoute = subdomain === 'admin'     || (!subdomain && location.pathname.startsWith('/admin'))
   const isNyxRoute   = subdomain === 'nyx-agent' || (!subdomain && location.pathname.startsWith('/nyx-agent'))
   const isChatRoute  = subdomain === 'nyx-chat'
+  const isNyxBrandRoute = isNyxRoute || isChatRoute
 
   // Routes that use default cursor (no custom cursor / lenis / magnetic)
   const isAppRoute = isAdminRoute || isNyxRoute || isChatRoute
@@ -225,6 +227,14 @@ function App() {
       delete document.body.dataset.adminPage
     }
   }, [isAppRoute, isAdminRoute])
+
+  useEffect(() => {
+    const favicon = document.getElementById('site-favicon')
+    document.title = isNyxBrandRoute
+      ? 'Nyx Agent | CTRL Build'
+      : 'CTRLBuild | Pembangun Negeri - Professional Web Development & Mobile App Services'
+    if (favicon) favicon.href = isNyxBrandRoute ? nyxFavicon : '/CTRLBuild-White.png'
+  }, [isNyxBrandRoute])
 
   useEffect(() => {
     if (isAppRoute) return
