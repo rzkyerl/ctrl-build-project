@@ -29,6 +29,8 @@ export class ImagePlane {
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.frustumCulled = false;
     this.mesh.name = 'ImagePlane';
+    this.mesh.userData._hoverTarget = 0;
+    console.log('[ImagePlane] created', this.mesh.name, 'size', this.width, 'x', this.height, 'material transparent', material.transparent);
   }
 
   dispose() {

@@ -8,6 +8,7 @@ interface ProjectDetail {
   category: string
   slug: { current: string }
   imageUrl?: string
+  role?: string
   overview?: string
   goals?: string
   features?: { title: string; desc: string }[]
@@ -77,18 +78,22 @@ export const PortofolioMoreDetail = () => {
 
         <div className="detail-content">
           <aside className="detail-sidebar">
-            <div className="sidebar-item">
-              <h3>Role</h3>
-              <p>Full-stack Developer / UI Designer</p>
-            </div>
-            <div className="sidebar-item">
-              <h3>Technology</h3>
-              <ul>
-                {project.techStack?.map((tech) => (
-                  <li key={tech._id} className="tech-tag">{tech.name}</li>
-                ))}
-              </ul>
-            </div>
+            {project.role && (
+              <div className="sidebar-item">
+                <h3>Role</h3>
+                <p>{project.role}</p>
+              </div>
+            )}
+            {project.techStack && project.techStack.length > 0 && (
+              <div className="sidebar-item">
+                <h3>Technology</h3>
+                <ul>
+                  {project.techStack.map((tech) => (
+                    <li key={tech._id} className="tech-tag">{tech.name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {project.link && (
               <div className="sidebar-item">
                 <h3>Live Project</h3>
@@ -105,32 +110,40 @@ export const PortofolioMoreDetail = () => {
           </aside>
 
           <main className="detail-main">
-            <section className="detail-section">
-              <h2>Project Overview</h2>
-              <p>{project.overview}</p>
-            </section>
+            {project.overview && (
+              <section className="detail-section">
+                <h2>Project Overview</h2>
+                <p>{project.overview}</p>
+              </section>
+            )}
 
-            <section className="detail-section">
-              <h2>Goals</h2>
-              <p>{project.goals}</p>
-            </section>
+            {project.goals && (
+              <section className="detail-section">
+                <h2>Goals</h2>
+                <p>{project.goals}</p>
+              </section>
+            )}
 
-            <section className="detail-section">
-              <h2>Core Features</h2>
-              <div className="feature-list">
-                {project.features?.map((feature) => (
-                  <div key={feature.title} className="feature-item">
-                    <h4>{feature.title}</h4>
-                    <p>{feature.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
+            {project.features && project.features.length > 0 && (
+              <section className="detail-section">
+                <h2>Core Features</h2>
+                <div className="feature-list">
+                  {project.features.map((feature) => (
+                    <div key={feature.title} className="feature-item">
+                      <h4>{feature.title}</h4>
+                      <p>{feature.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-            <section className="detail-section">
-              <h2>Architecture</h2>
-              <p>{project.architecture}</p>
-            </section>
+            {project.architecture && (
+              <section className="detail-section">
+                <h2>Architecture</h2>
+                <p>{project.architecture}</p>
+              </section>
+            )}
           </main>
         </div>
       </div>

@@ -6,6 +6,7 @@ interface Stack {
   _id: string
   name: string
   slug: { current: string }
+  description?: string
   iconUrl?: string
 }
 
@@ -53,28 +54,28 @@ const StackList: React.FC = () => {
     }
   }
 
-  if (loading) return <div className="ad-loading">LOADING...</div>
+  if (loading) return <div className="cb-stack-loading">LOADING...</div>
 
   return (
     <div>
       {/* Header */}
-      <div className="ad-page-header">
+      <div className="cb-stack-page-header">
         <div>
-          <h1 className="ad-page-title">Tech Stacks</h1>
-          <p className="ad-page-subtitle">{stacks.length} stacks total</p>
+          <h1 className="cb-stack-page-title">Tech Stacks</h1>
+          <p className="cb-stack-page-subtitle">{stacks.length} stacks total</p>
         </div>
-        <Link to="/admin/stacks/create" className="ad-btn ad-btn-primary">
+        <Link to="/admin/stacks/create" className="cb-stack-btn cb-stack-btn-primary">
           <Plus size={14} /> New Stack
         </Link>
       </div>
 
-      {error && <div className="ad-error">{error}</div>}
+      {error && <div className="cb-stack-error">{error}</div>}
 
       {stacks.length === 0 ? (
-        <div className="ad-empty">
-          <div className="ad-empty-icon">🧱</div>
-          <p className="ad-empty-text">No stacks yet</p>
-          <Link to="/admin/stacks/create" className="ad-btn ad-btn-primary">
+        <div className="cb-stack-empty">
+          <div className="cb-stack-empty-icon">🧱</div>
+          <p className="cb-stack-empty-text">No stacks yet</p>
+          <Link to="/admin/stacks/create" className="cb-stack-btn cb-stack-btn-primary">
             <Plus size={14} /> Add first stack
           </Link>
         </div>
@@ -88,16 +89,19 @@ const StackList: React.FC = () => {
                 <div className="cb-stack-card-icon-placeholder">?</div>
               )}
               <div className="cb-stack-card-name">{stack.name}</div>
+              {stack.description && (
+                <div className="cb-stack-card-description">{stack.description}</div>
+              )}
               <div className="cb-stack-card-slug">{stack.slug?.current}</div>
               <div className="cb-stack-card-actions">
                 <Link
                   to={`/admin/stacks/${stack._id}/edit`}
-                  className="ad-btn ad-btn-ghost ad-btn-sm"
+                  className="cb-stack-btn cb-stack-btn-ghost cb-stack-btn-sm"
                 >
                   <Pencil size={12} />
                 </Link>
                 <button
-                  className="ad-btn ad-btn-danger ad-btn-sm"
+                  className="cb-stack-btn cb-stack-btn-danger cb-stack-btn-sm"
                   onClick={() => setDeleteId(stack._id)}
                 >
                   <Trash2 size={12} />
@@ -110,18 +114,18 @@ const StackList: React.FC = () => {
 
       {/* Delete confirm modal */}
       {deleteId && (
-        <div className="ad-modal-overlay" onClick={() => setDeleteId(null)}>
-          <div className="ad-modal" onClick={e => e.stopPropagation()}>
-            <div className="ad-modal-title">Delete Stack</div>
-            <div className="ad-modal-desc">
+        <div className="cb-stack-modal-overlay" onClick={() => setDeleteId(null)}>
+          <div className="cb-stack-modal" onClick={e => e.stopPropagation()}>
+            <div className="cb-stack-modal-title">Delete Stack</div>
+            <div className="cb-stack-modal-desc">
               Are you sure you want to delete this stack? This action cannot be undone.
             </div>
-            <div className="ad-modal-actions">
-              <button className="ad-btn ad-btn-ghost" onClick={() => setDeleteId(null)}>
+            <div className="cb-stack-modal-actions">
+              <button className="cb-stack-btn cb-stack-btn-ghost" onClick={() => setDeleteId(null)}>
                 Cancel
               </button>
               <button
-                className="ad-btn ad-btn-danger"
+                className="cb-stack-btn cb-stack-btn-danger"
                 onClick={handleDelete}
                 disabled={deleting}
               >

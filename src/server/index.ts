@@ -57,6 +57,20 @@ function parseIds(raw: string | undefined): string[] {
   }
 }
 
+function getSimpleIconUrl(slug: string): string | null {
+  const cleaned = slug.trim().toLowerCase()
+  if (!cleaned) return null
+  return `https://cdn.simpleicons.org/${cleaned}`
+}
+
+const maybeUploadIcon = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (req.is('multipart/form-data') || req.is('multipart')) {
+    upload.single('icon')(req, res, next)
+  } else {
+    next()
+  }
+}
+
 async function uploadImageToSanity(file: Express.Multer.File) {
   const asset = await sanityAdminClient.assets.upload('image', file.buffer, {
     filename: file.originalname,
@@ -225,17 +239,152 @@ app.delete('/api/portfolios/:id', async (req, res) => {
   }
 })
 
+app.get('/api/images', async (req, res) => {
+  const target = typeof req.query.url === 'string' ? req.query.url : ''
+  if (!target) return res.status(400).json(fail('url query parameter is required.', 400))
+
+  let parsed
+  try {
+    parsed = new URL(target)
+  } catch {
+    return res.status(400).json(fail('Invalid image URL.', 400))
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    return res.status(400).json(fail('Unsupported protocol.', 400))
+  }
+
+  try {
+    const response = await fetch(target, { signal: req.signal })
+    if (!response.ok) {
+      return res.status(502).json(fail('Upstream image request failed.', 502))
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer())
+    res.set('Content-Type', response.headers.get('content-type') || 'application/octet-stream')
+    res.set('Access-Control-Allow-Origin', '*')
+    res.set('Cache-Control', 'public, max-age=86400')
+    res.send(buffer)
+  } catch (err: any) {
+    console.error('Image proxy error:', err)
+    res.status(502).json(fail('Failed to load image.', 502))
+  }
+})
+
+/* ─── TESTIMONIALS ─── */
+
+app.get('/api/testimonials', async (req, res) => {
+  try {
+    const data = await sanityReadClient.fetch<Testimonial[]>(`
+      *[_type == "testimonial"] | order(_createdAt desc) {
+        _id, author, role, company, quote
+      }
+    `)
+    res.json(ok(data))
+  } catch (err: any) {
+    console.error('Get testimonials error:', err)
+    res.status(500).json(fail('Unable to load testimonial data from Sanity.'))
+  }
+})
+
+app.get('/api/testimonials/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const data = await sanityReadClient.fetch<Testimonial | null>(
+      `*[_type == "testimonial" && _id == $id][0] {
+        _id, author, role, company, quote
+      }`,
+      { id }
+    )
+    if (!data) return res.status(404).json(fail('Testimonial not found.', 404))
+    res.json(ok(data))
+  } catch (err: any) {
+    console.error('Get testimonial error:', err)
+    res.status(500).json(fail('Unable to load testimonial data from Sanity.'))
+  }
+})
+
+app.post('/api/testimonials', async (req, res) => {
+  try {
+    if (!writeToken) {
+      return res.status(500).json(fail('Sanity write token is not configured.'))
+    }
+
+    const { author, role, company, quote } = req.body
+    if (!author || !role || !company || !quote) {
+      return res.status(400).json(fail('Author, role, company, and quote are required.', 400))
+    }
+
+    const doc: any = {
+      _type: 'testimonial',
+      author,
+      role,
+      company,
+      quote,
+    }
+
+    const created = await sanityAdminClient.create(doc)
+    res.status(201).json(ok({ _id: created._id }))
+  } catch (err: any) {
+    console.error('Create testimonial error:', err)
+    res.status(500).json(fail(err.message || 'Failed to create testimonial.'))
+  }
+})
+
+app.patch('/api/testimonials/:id', async (req, res) => {
+  try {
+    if (!writeToken) {
+      return res.status(500).json(fail('Sanity write token is not configured.'))
+    }
+
+    const { id } = req.params
+    const { author, role, company, quote } = req.body
+
+    const patch = sanityAdminClient.patch(id).set({
+      ...(author !== undefined ? { author } : {}),
+      ...(role !== undefined ? { role } : {}),
+      ...(company !== undefined ? { company } : {}),
+      ...(quote !== undefined ? { quote } : {}),
+    })
+
+    await patch.commit()
+    res.json(ok({ _id: id }))
+  } catch (err: any) {
+    console.error('Update testimonial error:', err)
+    res.status(500).json(fail(err.message || 'Failed to update testimonial.'))
+  }
+})
+
+app.delete('/api/testimonials/:id', async (req, res) => {
+  try {
+    if (!writeToken) {
+      return res.status(500).json(fail('Sanity write token is not configured.'))
+    }
+
+    const { id } = req.params
+    await sanityAdminClient.delete(id)
+    res.status(204).end()
+  } catch (err: any) {
+    console.error('Delete testimonial error:', err)
+    res.status(500).json(fail(err.message || 'Failed to delete testimonial.'))
+  }
+})
+
 /* ─── STACKS ─── */
 
 app.get('/api/stacks', async (req, res) => {
   try {
     const data = await sanityReadClient.fetch<Stack[]>(`
       *[_type == "stack"] | order(name asc) {
-        _id, name, slug,
+        _id, name, slug, description, _createdAt, _updatedAt,
         "iconUrl": icon.asset->url
       }
     `)
-    res.json(ok(data))
+    const stacks = data.map((stack) => ({
+      ...stack,
+      iconUrl: stack.iconUrl || getSimpleIconUrl(stack.slug.current),
+    }))
+    res.json(ok(stacks))
   } catch (err: any) {
     console.error('Get stacks error:', err)
     res.status(500).json(fail('Unable to load stack data from Sanity.'))
@@ -247,26 +396,30 @@ app.get('/api/stacks/:id', async (req, res) => {
     const { id } = req.params
     const data = await sanityReadClient.fetch<Stack | null>(
       `*[_type == "stack" && _id == $id][0] {
-        _id, name, slug,
+        _id, name, slug, description,
         "iconUrl": icon.asset->url
       }`,
       { id }
     )
     if (!data) return res.status(404).json(fail('Stack not found.', 404))
-    res.json(ok(data))
+    const stack = {
+      ...data,
+      iconUrl: data.iconUrl || getSimpleIconUrl(data.slug.current),
+    }
+    res.json(ok(stack))
   } catch (err: any) {
     console.error('Get stack error:', err)
     res.status(500).json(fail('Unable to load stack data from Sanity.'))
   }
 })
 
-app.post('/api/stacks', upload.single('icon'), async (req, res) => {
+app.post('/api/stacks', maybeUploadIcon, async (req, res) => {
   try {
     if (!writeToken) {
       return res.status(500).json(fail('Sanity write token is not configured.'))
     }
 
-    const { name, slug } = req.body
+    const { name, slug, description } = req.body
     if (!name || !slug) return res.status(400).json(fail('Name and slug are required.', 400))
 
     let iconAssetId: string | undefined
@@ -278,6 +431,7 @@ app.post('/api/stacks', upload.single('icon'), async (req, res) => {
       _type: 'stack',
       name,
       slug: { current: slug },
+      ...(description ? { description } : {}),
     }
     if (iconAssetId) {
       doc.icon = { _type: 'image', asset: { _type: 'reference', _ref: iconAssetId } }
@@ -291,19 +445,20 @@ app.post('/api/stacks', upload.single('icon'), async (req, res) => {
   }
 })
 
-app.patch('/api/stacks/:id', upload.single('icon'), async (req, res) => {
+app.patch('/api/stacks/:id', maybeUploadIcon, async (req, res) => {
   try {
     if (!writeToken) {
       return res.status(500).json(fail('Sanity write token is not configured.'))
     }
 
     const { id } = req.params
-    const { name, slug } = req.body
+    const { name, slug, description } = req.body
     if (!name || !slug) return res.status(400).json(fail('Name and slug are required.', 400))
 
     const patch = sanityAdminClient.patch(id).set({
       name,
       slug: { current: slug },
+      ...(description !== undefined ? { description } : {}),
     })
 
     if (req.file) {
@@ -347,6 +502,14 @@ app.listen(PORT, () => {
   console.log(`Backend API running on http://localhost:${PORT}`)
 })
 
+interface Testimonial {
+  _id: string
+  author: string
+  role: string
+  company: string
+  quote: string
+}
+
 interface Portfolio {
   _id: string
   title: string
@@ -362,5 +525,6 @@ interface Stack {
   _id: string
   name: string
   slug: { current: string }
+  description?: string | null
   iconUrl?: string
 }

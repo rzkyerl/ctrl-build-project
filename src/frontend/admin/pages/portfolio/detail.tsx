@@ -96,7 +96,7 @@ const PortfolioDetail: React.FC = () => {
           {portfolio.imageUrl && (
             <div className="cb-portfolio-detail-card">
               <img src={portfolio.imageUrl} alt={portfolio.title}
-                style={{ width:'100%', maxHeight:320, objectFit:'cover', display:'block' }} />
+                style={{ width:'100%', height:'auto', display:'block' }} />
             </div>
           )}
 

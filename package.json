@@ -47,5 +47,18 @@
     "sharp": "^0.35.4",
     "tsx": "^4.19.3",
     "vite": "^8.0.10"
-  }
+  },
+  "description": "This is a modern web application built with React, Vite, and Three.js. It features interactive WebGL particle text systems, fluid cursor effects, and high-performance animations using Lenis scroll.",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rzkyerl/ctrl-build-project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rzkyerl/ctrl-build-project/issues"
+  },
+  "homepage": "https://github.com/rzkyerl/ctrl-build-project#readme"
 }

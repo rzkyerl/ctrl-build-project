@@ -38,17 +38,17 @@ const PortfolioEdit: React.FC = () => {
       .then(body => {
         if (!body.success) throw new Error(body.error || 'Portfolio not found.')
         const d = body.data
-        setTitle(d.title || '')
-        setSlug(d.slug?.current || '')
-        setCategory(d.category || CATEGORIES[0])
-        setImagePreview(d.imageUrl || '')
-        setOverview(d.overview || '')
-        setGoals(d.goals || '')
-        setFeatures(Array.isArray(d.features) ? d.features : [])
-        setArchitecture(d.architecture || '')
-        setTechStack((d.techStack || []).map((t: any) => t._id))
-        setStackNames((d.techStack || []).map((t: any) => t.name))
-        setLink(d.link || '')
+      setTitle(d.title || '')
+      setSlug(d.slug?.current || '')
+      setCategory(d.category || CATEGORIES[0])
+      setImagePreview(d.imageUrl || '')
+      setOverview(d.overview || '')
+      setGoals(d.goals || '')
+      setFeatures(Array.isArray(d.features) ? d.features : [])
+      setArchitecture(d.architecture || '')
+      setTechStack((d.techStack || []).map((t: any) => t._id))
+      setStackNames((d.techStack || []).map((t: any) => t.name))
+      setLink(d.link || '')
       })
       .catch(() => setError('Unable to load portfolio data from Sanity.'))
       .finally(() => setFetching(false))
@@ -130,15 +130,15 @@ const PortfolioEdit: React.FC = () => {
 
               <div className="cb-portfolio-field">
                 <label className="cb-portfolio-label">Main Image</label>
-                {imagePreview ? (
-                  <div style={{ position:'relative', display:'inline-block' }}>
-                    <img src={imagePreview} alt="Preview" className="cb-portfolio-upload-preview" />
-                    <button type="button" onClick={() => { setImageFile(null); setImagePreview('') }}
-                      style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.6)', border:'none', borderRadius:'50%', width:22, height:22, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#fff' }}>
-                      <X size={12} />
-                    </button>
-                  </div>
-                ) : (
+                  {imagePreview ? (
+                    <div style={{ position:'relative', display:'block', width:'100%' }}>
+                      <img src={imagePreview} alt="Preview" className="cb-portfolio-upload-preview" />
+                      <button type="button" onClick={() => { setImageFile(null); setImagePreview('') }}
+                        style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.6)', border:'none', borderRadius:'50%', width:22, height:22, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#fff' }}>
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
                   <div className="cb-portfolio-upload-zone" onClick={() => fileRef.current?.click()}
                     onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) handleImageChange(f) }}
                     onDragOver={e => e.preventDefault()}>

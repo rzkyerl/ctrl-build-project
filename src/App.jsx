@@ -29,6 +29,7 @@ const PortfolioDetail = lazy(() => import('./frontend/admin/pages/portfolio/deta
 const StackList       = lazy(() => import('./frontend/admin/pages/stack/index'))
 const StackCreate     = lazy(() => import('./frontend/admin/pages/stack/create'))
 const StackEdit       = lazy(() => import('./frontend/admin/pages/stack/edit'))
+const TestimonialList = lazy(() => import('./frontend/admin/pages/testimonial/index'))
 
 // Nyx Agent SPA — lazy-loaded
 const NyxAgentPage    = lazy(() => import('./frontend/nyx-agent/pages/NyxAgentPage'))
@@ -278,32 +279,33 @@ function App() {
           {/* Localhost: localhost:5173/admin/login */}
           <Route path="/admin/login" element={<Login />} />
 
-          {/* Protected admin routes — wrapped in AdminLayout */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<AdminLayout />}>
-              {/* Production root redirects to dashboard */}
-              <Route path="/"                               element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard"                      element={<Dashboard />} />
-              <Route path="/portfolios"                     element={<PortfolioList />} />
-              <Route path="/portfolios/create"              element={<PortfolioCreate />} />
-              <Route path="/portfolios/:id"                 element={<PortfolioDetail />} />
-              <Route path="/portfolios/:id/edit"            element={<PortfolioEdit />} />
-              <Route path="/stacks"                         element={<StackList />} />
-              <Route path="/stacks/create"                  element={<StackCreate />} />
-              <Route path="/stacks/:id/edit"                element={<StackEdit />} />
+              {/* Protected admin routes — wrapped in AdminLayout */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<AdminLayout />}>
+                  {/* Production root redirects to dashboard */}
+                  <Route path="/"                               element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard"                      element={<Dashboard />} />
+                  <Route path="/portfolios"                     element={<PortfolioList />} />
+                  <Route path="/portfolios/create"              element={<PortfolioCreate />} />
+                  <Route path="/portfolios/:id"                 element={<PortfolioDetail />} />
+                  <Route path="/portfolios/:id/edit"            element={<PortfolioEdit />} />
+                  <Route path="/stacks"                         element={<StackList />} />
+                  <Route path="/stacks/create"                  element={<StackCreate />} />
+                  <Route path="/stacks/:id/edit"                element={<StackEdit />} />
 
-              {/* Localhost: /admin/* paths */}
-              <Route path="/admin"                          element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/admin/dashboard"                element={<Dashboard />} />
-              <Route path="/admin/portfolios"               element={<PortfolioList />} />
-              <Route path="/admin/portfolios/create"        element={<PortfolioCreate />} />
-              <Route path="/admin/portfolios/:id"           element={<PortfolioDetail />} />
-              <Route path="/admin/portfolios/:id/edit"      element={<PortfolioEdit />} />
-              <Route path="/admin/stacks"                   element={<StackList />} />
-              <Route path="/admin/stacks/create"            element={<StackCreate />} />
-              <Route path="/admin/stacks/:id/edit"          element={<StackEdit />} />
-            </Route>
-          </Route>
+                  {/* Localhost: /admin/* paths */}
+                  <Route path="/admin"                          element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="/admin/dashboard"                element={<Dashboard />} />
+                  <Route path="/admin/portfolios"               element={<PortfolioList />} />
+                  <Route path="/admin/portfolios/create"        element={<PortfolioCreate />} />
+                  <Route path="/admin/portfolios/:id"           element={<PortfolioDetail />} />
+                  <Route path="/admin/portfolios/:id/edit"      element={<PortfolioEdit />} />
+                  <Route path="/admin/stacks"                   element={<StackList />} />
+                  <Route path="/admin/stacks/create"            element={<StackCreate />} />
+                  <Route path="/admin/stacks/:id/edit"          element={<StackEdit />} />
+                  <Route path="/admin/testimonials"             element={<TestimonialList />} />
+                </Route>
+              </Route>
         </Routes>
       </Suspense>
     )

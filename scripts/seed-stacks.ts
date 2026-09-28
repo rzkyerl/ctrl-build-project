@@ -93,10 +93,10 @@ async function main() {
   const created: string[] = []
   const updated: string[] = []
 
-for (const item of FRONTEND_STACKS) {
-      if (BLOCKED_STACK_SLUGS.has(item.slug)) {
-        continue
-      }
+  for (const item of FRONTEND_STACKS) {
+    if (BLOCKED_STACK_SLUGS.has(item.slug)) {
+      continue
+    }
 
       const found = bySlug.get(item.slug)
       if (found) {

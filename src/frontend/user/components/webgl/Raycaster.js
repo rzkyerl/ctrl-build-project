@@ -36,7 +36,7 @@ export class Raycaster {
     const intersects = this.raycaster.intersectObjects(objects, true);
     if (intersects.length > 0) {
       const hitMesh = intersects[0].object;
-      const hitPlane = this.planes.find(p => p.mesh === hitMesh);
+      const hitPlane = this.planes.find(p => p.mesh === hitMesh) || hitMesh.userData?._plane;
       if (hitPlane && hitPlane !== this.currentHover) {
         this.currentHover = hitPlane;
         // update hover uniform for all planes (reset others)

@@ -1,37 +1,42 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Upload, X } from 'lucide-react'
 
 const StackCreate: React.FC = () => {
   const navigate = useNavigate()
-  const fileRef  = useRef<HTMLInputElement>(null)
 
-  const [name, setName]           = useState('')
-  const [slug, setSlug]           = useState('')
+  const [name, setName]             = useState('')
+  const [slug, setSlug]             = useState('')
   const [slugManual, setSlugManual] = useState(false)
-  const [iconFile, setIconFile]   = useState<File | null>(null)
-  const [iconPreview, setIconPreview] = useState('')
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState('')
+  const [description, setDescription] = useState('')
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState('')
+  const [iconError, setIconError]   = useState(false)
 
-  const toSlug = (val: string) =>
-    val.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  const toSlug = (val: string) => {
+    const raw = val.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    const aliases: Record<string, string> = {
+      nextjs: 'nextdotjs',
+      nodejs: 'nodedotjs',
+      'tailwind-css': 'tailwindcss',
+      css3: 'css',
+    }
+    return aliases[raw] || raw
+  }
+
+  useEffect(() => {
+    setIconError(false)
+  }, [slug])
 
   const handleNameChange = (val: string) => {
     setName(val)
     if (!slugManual) setSlug(toSlug(val))
   }
 
-  const handleIconChange = (file: File) => {
-    setIconFile(file)
-    setIconPreview(URL.createObjectURL(file))
+  const handleDescriptionChange = (val: string) => {
+    setDescription(val)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    const file = e.dataTransfer.files[0]
-    if (file && file.type.startsWith('image/')) handleIconChange(file)
-  }
+  const simpleIconUrl = slug ? `https://cdn.simpleicons.org/${slug}` : ''
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,12 +44,11 @@ const StackCreate: React.FC = () => {
     setError('')
     setLoading(true)
     try {
-      const formData = new FormData()
-      formData.append('name', name)
-      formData.append('slug', slug)
-      if (iconFile) formData.append('icon', iconFile)
-
-      const res = await fetch('/api/stacks', { method: 'POST', body: formData })
+      const res = await fetch('/api/stacks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, slug, description })
+      })
       if (!res.ok) throw new Error(await res.text())
       navigate('/admin/stacks')
     } catch (err: any) {
@@ -56,24 +60,24 @@ const StackCreate: React.FC = () => {
 
   return (
     <div>
-      <div className="ad-page-header">
+      <div className="cb-stack-page-header">
         <div>
-          <h1 className="ad-page-title">New Stack</h1>
-          <p className="ad-page-subtitle">Add a new tech stack</p>
+          <h1 className="cb-stack-page-title">New Stack</h1>
+          <p className="cb-stack-page-subtitle">Add a new tech stack</p>
         </div>
       </div>
 
       <div style={{ maxWidth: 480 }}>
-        {error && <div className="ad-error">{error}</div>}
+        {error && <div className="cb-stack-error">{error}</div>}
 
-        <div className="ad-card">
-          <div className="ad-card-body">
-            <form className="ad-form" onSubmit={handleSubmit}>
+        <div className="cb-stack-card">
+          <div className="cb-stack-card-body">
+            <form className="cb-stack-form" onSubmit={handleSubmit}>
               {/* Name */}
-              <div className="ad-field">
-                <label className="ad-label">Name *</label>
+              <div className="cb-stack-field">
+                <label className="cb-stack-label">Name *</label>
                 <input
-                  className="ad-input"
+                  className="cb-stack-input"
                   placeholder="e.g. React"
                   value={name}
                   onChange={e => handleNameChange(e.target.value)}
@@ -82,60 +86,63 @@ const StackCreate: React.FC = () => {
               </div>
 
               {/* Slug */}
-              <div className="ad-field">
-                <label className="ad-label">Slug *</label>
+              <div className="cb-stack-field">
+                <label className="cb-stack-label">Slug *</label>
                 <input
-                  className="ad-input"
+                  className="cb-stack-input"
                   placeholder="e.g. react"
                   value={slug}
                   onChange={e => { setSlug(toSlug(e.target.value)); setSlugManual(true) }}
                   required
                 />
-                <span className="ad-input-hint">Auto-generated from name. URL-safe only.</span>
+                <span className="cb-stack-input-hint">Auto-generated from name. URL-safe only.</span>
               </div>
 
-              {/* Icon upload */}
-              <div className="ad-field">
-                <label className="ad-label">Icon</label>
-                {iconPreview ? (
-                  <div style={{ position:'relative', display:'inline-block' }}>
-                    <img src={iconPreview} alt="Preview" style={{ width:64, height:64, objectFit:'contain', borderRadius:8, border:'1px solid var(--ad-border)', background:'var(--ad-surface2)', padding:4 }} />
-                    <button
-                      type="button"
-                      onClick={() => { setIconFile(null); setIconPreview('') }}
-                      style={{ position:'absolute', top:-8, right:-8, width:20, height:20, borderRadius:'50%', border:'1px solid var(--ad-border)', background:'var(--ad-surface)', color:'var(--ad-text-dim)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
-                    >
-                      <X size={11} />
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    className="ad-upload-zone"
-                    onClick={() => fileRef.current?.click()}
-                    onDrop={handleDrop}
-                    onDragOver={e => e.preventDefault()}
-                  >
-                    <Upload size={20} style={{ color:'var(--ad-text-muted)', margin:'0 auto 8px', display:'block' }} />
-                    <div className="ad-upload-text">Click or drag to upload icon</div>
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={e => e.target.files?.[0] && handleIconChange(e.target.files[0])}
+              {/* Description */}
+              <div className="cb-stack-description-field">
+                <label className="cb-stack-description">Description</label>
+                <textarea
+                  className="cb-stack-description-input"
+                  placeholder="Briefly describe what this technology is used for."
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* Icon preview */}
+              <div className="cb-stack-field">
+                <label className="cb-stack-label">Icon</label>
+                <div className="cb-stack-icon-preview">
+                  {simpleIconUrl && !iconError ? (
+                    <img
+                      src={simpleIconUrl}
+                      alt={`${name || slug} icon`}
+                      className="cb-stack-icon-preview-img"
+                      onError={() => setIconError(true)}
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="cb-stack-icon-preview-fallback">
+                      {slug ? 'No icon available' : '?'}
+                    </div>
+                  )}
+                  {slug && (
+                    <div className="cb-stack-icon-preview-meta">
+                      Simple Icons · {slug}
+                    </div>
+                  )}
+                </div>
               </div>
             </form>
           </div>
 
-          <div className="ad-card-footer">
-            <button type="button" className="ad-btn ad-btn-ghost" onClick={() => navigate(-1)}>
+          <div className="cb-stack-card-footer">
+            <button type="button" className="cb-stack-btn cb-stack-btn-ghost" onClick={() => navigate(-1)}>
               Cancel
             </button>
             <button
               type="submit"
-              className="ad-btn ad-btn-primary"
+              className="cb-stack-btn cb-stack-btn-primary"
               disabled={loading}
               onClick={handleSubmit as any}
             >
