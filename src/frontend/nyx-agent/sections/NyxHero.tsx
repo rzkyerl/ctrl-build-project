@@ -105,7 +105,7 @@ export function NyxHero() {
           </span>
           <span className="nyx-hero-nav-socials">
             <a
-              href="https://github.com/rzkyerl/ctrl-agent"
+              href="https://github.com/rzkyerl/nyx-agent"
               target="_blank"
               rel="noopener noreferrer"
               className="nyx-hero-nav-social"
