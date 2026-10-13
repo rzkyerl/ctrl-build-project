@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../../../backend/contexts/AuthContext'
 import '../style/login.css'
 
@@ -11,6 +12,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   // Redirect jika sudah login
   useEffect(() => {
@@ -120,14 +122,27 @@ const Login: React.FC = () => {
 
           <div className="login-form-group">
             <label>Password</label>
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
+            <div className="login-password-wrap">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
+              <button
+                type="button"
+                className="login-password-toggle"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                tabIndex={-1}
+                disabled={loading}
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
+              </button>
+            </div>
             <div className="login-input-glow" />
           </div>
 
@@ -136,7 +151,7 @@ const Login: React.FC = () => {
           <div className="login-submit-wrap">
             <div className="mercury-drop" />
             <button type="submit" className="login-btn" disabled={loading}>
-              {loading ? 'Authenticating...' : 'Login...'}
+              {loading ? 'Authenticating...' : 'Login'}
             </button>
           </div>
         </form>

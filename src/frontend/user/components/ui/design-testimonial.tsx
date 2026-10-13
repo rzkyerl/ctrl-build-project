@@ -1,29 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 
-const testimonials = [
-  {
-    quote: "Transformed our entire creative process overnight.",
-    author: "Bayu Tri Novianto",
-    role: "Founder 3NT Studio",
-    company: "3NT Studio",
-  },
-  {
-    quote: "The most elegant solution we've ever implemented.",
-    author: "Anonymous",
-    role: "Consultant",
-    company: "Anagata Executive",
-  },
-  {
-    quote: "Pure craftsmanship in every single detail.",
-    author: "Anonymous",
-    role: "Student",
-    company: "Student",
-  },
-]
+interface TestimonialItem {
+  _id: string
+  author: string
+  role: string
+  company: string
+  quote: string
+}
 
 export function Testimonial() {
-  const [activeIndex, setActiveIndex] = useState(0)
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([])
+  const [loading, setLoading]               = useState(true)
+  const [error, setError]                   = useState<string | null>(null)
+  const [activeIndex, setActiveIndex]       = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const mouseX = useMotionValue(0)
@@ -35,6 +25,29 @@ export function Testimonial() {
   const numberX = useTransform(x, [-200, 200], [-20, 20])
   const numberY = useTransform(y, [-200, 200], [-10, 10])
 
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    fetch('/api/testimonials')
+      .then(res => res.json())
+      .then(body => {
+        if (!cancelled) {
+          if (!body.success) throw new Error(body.error || 'Failed to load testimonials.')
+          setTestimonials(body.data || [])
+          setActiveIndex(0)
+          setLoading(false)
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setError(err.message || 'Failed to load testimonials.')
+          setLoading(false)
+        }
+      })
+    return () => { cancelled = true }
+  }, [])
+
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = containerRef.current?.getBoundingClientRect()
     if (rect) {
@@ -43,15 +56,54 @@ export function Testimonial() {
     }
   }
 
-  const goNext = () => setActiveIndex((prev) => (prev + 1) % testimonials.length)
-  const goPrev = () => setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+  const goNext = () => {
+    if (testimonials.length === 0) return
+    setActiveIndex((prev) => (prev + 1) % testimonials.length)
+  }
+  const goPrev = () => {
+    if (testimonials.length === 0) return
+    setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+  }
 
   useEffect(() => {
+    if (testimonials.length === 0) return
     const timer = setInterval(goNext, 6000)
     return () => clearInterval(timer)
-  }, [])
+  }, [testimonials.length, goNext])
 
   const current = testimonials[activeIndex]
+
+  if (loading) {
+    return (
+      <div className="tm-inner" ref={containerRef}>
+        <div className="tm-layout">
+          <div className="tm-sidebar">
+            <span className="tm-label">Testimonials</span>
+          </div>
+          <div className="tm-content" style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 0' }}>
+            <p style={{ color:'var(--ad-text-muted)', fontSize:13 }}>Loading testimonials...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !current) {
+    return (
+      <div className="tm-inner" ref={containerRef}>
+        <div className="tm-layout">
+          <div className="tm-sidebar">
+            <span className="tm-label">Testimonials</span>
+          </div>
+          <div className="tm-content" style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 0' }}>
+            <p style={{ color:'var(--ad-text-muted)', fontSize:13 }}>
+              {error || 'No testimonials available.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -222,3 +274,4 @@ export function Testimonial() {
     </div>
   )
 }
+

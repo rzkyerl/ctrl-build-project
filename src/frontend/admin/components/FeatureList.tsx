@@ -23,24 +23,24 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange }) 
 
   return (
     <div>
-      <div className="ad-feature-list">
+      <div className="cb-portfolio-feature-list">
         {features.map((feature, i) => (
-          <div key={i} className="ad-feature-item">
+          <div key={i} className="cb-portfolio-feature-item">
             <input
-              className="ad-input"
+              className="cb-portfolio-input"
               placeholder="Feature title"
               value={feature.title}
               onChange={e => update(i, 'title', e.target.value)}
             />
             <input
-              className="ad-input"
+              className="cb-portfolio-input"
               placeholder="Short description"
               value={feature.desc}
               onChange={e => update(i, 'desc', e.target.value)}
             />
             <button
               type="button"
-              className="ad-feature-remove"
+              className="cb-portfolio-feature-remove"
               onClick={() => remove(i)}
               title="Remove feature"
             >
@@ -51,7 +51,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange }) 
       </div>
       <button
         type="button"
-        className="ad-btn ad-btn-ghost ad-btn-sm"
+        className="cb-portfolio-btn cb-portfolio-btn-ghost cb-portfolio-btn-sm"
         style={{ marginTop: 8 }}
         onClick={add}
       >

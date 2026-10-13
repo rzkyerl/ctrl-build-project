@@ -33,6 +33,13 @@ export const stackType = defineType({
         accept: 'image/*',
       },
     }),
+    defineField({
+      name: 'description',
+      title: 'Description',
+      type: 'text',
+      description: 'Deskripsi singkat tentang teknologi ini',
+      rows: 2,
+    }),
   ],
   preview: {
     select: {

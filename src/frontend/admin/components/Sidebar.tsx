@@ -1,9 +1,12 @@
 import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FolderOpen, Layers, LogOut, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, Layers, LogOut, ExternalLink, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
 import { useAuth } from '../../../backend/contexts/AuthContext'
 import logoWhite from '../../../assets/images/CTRLBuild-White.png'
 import logoBlack from '../../../assets/images/CTRLBuild-Black.png'
+
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.ctrl-build.my.id'
+const SITE_NAME = import.meta.env.VITE_SITE_NAME || 'CTRLBuild'
 
 interface SidebarProps {
   collapsed: boolean
@@ -12,9 +15,10 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { to: '/admin/dashboard',  label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/portfolios', label: 'Portfolio',  icon: FolderOpen },
-  { to: '/admin/stacks',     label: 'Stacks',     icon: Layers },
+  { to: '/admin/dashboard',    label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/portfolios',   label: 'Portfolio',  icon: FolderOpen },
+  { to: '/admin/testimonials', label: 'Testimonials', icon: MessageSquare },
+  { to: '/admin/stacks',       label: 'Stacks',     icon: Layers },
 ]
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse }) => {
@@ -31,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
       {/* Logo */}
       <a href="/admin/dashboard" className="sidebar-logo">
         <div className="sidebar-logo-mark">CB</div>
-        <span className="sidebar-logo-text">CTRLBUILD</span>
+        <span className="sidebar-logo-text">{SITE_NAME.toUpperCase()}</span>
       </a>
 
       {/* Nav */}
@@ -54,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
 
         {/* Visit Site */}
         <a
-          href="https://www.ctrl-build.my.id"
+          href={SITE_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="sidebar-nav-item"

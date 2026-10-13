@@ -53,9 +53,12 @@ export class GridLayout {
       mesh.position.set(x, y, 0);
       mesh.userData._offX = 0;
       mesh.userData._offY = 0;
+      mesh.userData._plane = plane;
       engine.add(mesh);
       return { mesh, bx: x, by: y };
     });
+
+    console.log('[GridLayout] planes:', planes.length, 'slots:', this._slots.length, 'meshes:', this._meshes.length, 'scene children:', engine.scene.children.length);
 
     // Wrap bounds = one full grid cycle
     this._cycleW = visCols * this._tileW;
@@ -155,8 +158,11 @@ export class GridLayout {
       const u = mesh.material?.uniforms;
       if (!u) return;
       const vel = Math.sqrt(this.velX * this.velX + this.velY * this.velY);
-      if (u.u_velocity !== undefined) u.u_velocity.value = this.velY;
-      if (u.u_bend     !== undefined) {
+      if (u.u_velocity !== undefined) {
+        const deadzone = 0.0005;
+        u.u_velocity.value = Math.abs(this.velY) < deadzone ? 0 : this.velY;
+      }
+      if (u.u_bend !== undefined) {
         const tb = 1.2 + vel * 25;
         u.u_bend.value += (tb - u.u_bend.value) * 0.1;
       }

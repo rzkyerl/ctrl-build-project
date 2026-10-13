@@ -40,18 +40,27 @@ export function useWebGLGallery(items, initialMode = 'grid') {
     loader.load(items.map(i => i.url)).then((textures) => {
       if (disposed) return;
 
+      const maxAniso = engine.renderer.capabilities.getMaxAnisotropy?.() ?? 1;
+      textures.forEach((tex) => {
+        tex.anisotropy = Math.min(4, maxAniso);
+        tex.needsUpdate = true;
+      });
+
       const planes    = textures.map(tex => new ImagePlane(tex));
       const layoutMgr = new LayoutManager(engine, planes, containerRef.current);
       layoutMgr.setMode('grid');
 
+      console.log('[WebGL] textures:', textures.length, 'planes:', planes.length, 'scene children after layout:', engine.scene.children.length);
+
       const ray = new Raycaster(containerRef.current, engine.camera, planes, {
         onHover: (plane) => {
-          // animate u_hover uniform
-          planes.forEach(p => {
-            p.mesh.material.uniforms.u_hover.value = 0;
+          engine.scene.children.forEach((child) => {
+            if (child.material?.uniforms?.u_hover) {
+              child.userData._hoverTarget = 0;
+            }
           });
           if (plane) {
-            plane.mesh.material.uniforms.u_hover.value = 1;
+            plane.mesh.userData._hoverTarget = 1;
             plane.mesh.material.uniforms.u_mouse.value.set(0.5, 0.5);
           }
         },
@@ -70,6 +79,8 @@ export function useWebGLGallery(items, initialMode = 'grid') {
 
       internalsRef.current = { engine, layoutMgr, ray, drag, planes };
       setReady(true);
+    }).catch((err) => {
+      console.error('[WebGL] texture load failed:', err);
     });
     }; // end startEngine
 

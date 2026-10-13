@@ -16,6 +16,8 @@ export class WebGLRendererEngine {
     this.renderer.setSize(w, h, false); // false = don't set canvas CSS size
     this.renderer.setClearColor(0x000000, 0);
 
+    this.scene.background = new THREE.Color(0x0d0d0d);
+
     // Let CSS control visual size, setSize only sets internal buffer
     const canvas = this.renderer.domElement;
     canvas.style.display  = 'block';
@@ -29,6 +31,7 @@ export class WebGLRendererEngine {
     this._rafId         = null;
     this._elapsed       = 0;
     this._lastTs        = null;
+    this._frameCount    = 0;
     this._resizeHandler = this._onResize.bind(this);
     this._onFrame       = this._onFrame.bind(this);
 
@@ -40,11 +43,23 @@ export class WebGLRendererEngine {
     if (this._lastTs === null) this._lastTs = ts;
     this._elapsed += (ts - this._lastTs) * 0.001;
     this._lastTs = ts;
+    this._frameCount++;
+
+    if (this._frameCount <= 5) {
+      console.log('[WebGL] frame', this._frameCount, 'scene children:', this.scene.children.length);
+      this.scene.children.forEach((child, idx) => {
+        console.log('[WebGL] child', idx, child.type, child.name, 'visible', child.visible, 'position', child.position.toArray());
+      });
+    }
 
     this.scene.children.forEach(obj => {
       const u = obj.material?.uniforms;
       if (!u) return;
       if (u.u_time     !== undefined) u.u_time.value     = this._elapsed;
+      if (u.u_hover    !== undefined) {
+        const target = obj.userData._hoverTarget ?? u.u_hover.value;
+        u.u_hover.value += (target - u.u_hover.value) * 0.15;
+      }
       // u_velocity and u_bend are updated per-layout, not here
     });
 
