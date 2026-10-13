@@ -5,6 +5,9 @@ import { useAuth } from '../../../backend/contexts/AuthContext'
 import logoWhite from '../../../assets/images/CTRLBuild-White.png'
 import logoBlack from '../../../assets/images/CTRLBuild-Black.png'
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://www.ctrl-build.my.id'
+const SITE_NAME = import.meta.env.VITE_SITE_NAME || 'CTRLBuild'
+
 interface SidebarProps {
   collapsed: boolean
   onToggleCollapse: () => void
@@ -32,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
       {/* Logo */}
       <a href="/admin/dashboard" className="sidebar-logo">
         <div className="sidebar-logo-mark">CB</div>
-        <span className="sidebar-logo-text">CTRLBUILD</span>
+        <span className="sidebar-logo-text">{SITE_NAME.toUpperCase()}</span>
       </a>
 
       {/* Nav */}
@@ -55,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleCollapse })
 
         {/* Visit Site */}
         <a
-          href="https://www.ctrl-build.my.id"
+          href={SITE_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="sidebar-nav-item"

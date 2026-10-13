@@ -53,14 +53,13 @@ type ActivityItem = {
   timestamp: string;
 };
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.ctrl-build.my.id";
+const SITE_NAME = import.meta.env.VITE_SITE_NAME || "CTRLBuild";
+
 const FALLBACK_STATS = {
   portfolioCount: 0,
   stackCount: 0,
   recentPortfolios: [] as RecentPortfolio[],
-};
-
-const FALLBACK_ALL = {
-  allPortfolios: [] as Portfolio[],
 };
 
 function getGreeting() {
@@ -227,7 +226,7 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  const activity = useMemo(() => buildActivity(stats.recentPortfolios, stacks), [stats.recentPortfolios, stacks]);
+  const activity = useMemo(() => buildActivity(allPortfolios, stacks), [allPortfolios, stacks]);
   const health = useMemo(() => computeHealth(allPortfolios, stacks), [allPortfolios, stacks]);
 
   if (loading) {
@@ -236,7 +235,7 @@ const Dashboard: React.FC = () => {
         <div className="ad-page-header">
           <div>
             <h1 className="ad-page-title">Dashboard</h1>
-            <p className="ad-page-subtitle">Manage your CTRLBuild website content from one place.</p>
+            <p className="ad-page-subtitle">Manage your {SITE_NAME} website content from one place.</p>
           </div>
         </div>
         <div className="cb-dashboard-skeleton-grid">
@@ -256,7 +255,7 @@ const Dashboard: React.FC = () => {
         <div>
           <h1 className="ad-page-title">Dashboard</h1>
           <p className="ad-page-subtitle">
-            {getGreeting()}, Admin. Manage your CTRLBuild website content from one place.
+            {getGreeting()}, Admin. Manage your {SITE_NAME} website content from one place.
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -270,7 +269,7 @@ const Dashboard: React.FC = () => {
             <RefreshCw size={14} style={refreshing ? { animation: "spin 1s linear infinite" } : undefined} />
           </button>
           <a
-            href="https://www.ctrl-build.my.id"
+            href={SITE_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="ad-btn ad-btn-ghost"
@@ -479,7 +478,7 @@ const Dashboard: React.FC = () => {
           </Link>
 
           <a
-            href="https://www.ctrl-build.my.id"
+            href={SITE_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="ad-overview-row ad-overview-link"
@@ -488,7 +487,7 @@ const Dashboard: React.FC = () => {
               <ExternalLink size={15} className="ad-overview-icon" />
               <div>
                 <div className="ad-overview-name">Public Website</div>
-                <div className="ad-overview-type">Open the public CTRLBuild website</div>
+                <div className="ad-overview-type">Open the public {SITE_NAME} website</div>
               </div>
             </div>
             <ExternalLink size={15} className="ad-overview-arrow" />

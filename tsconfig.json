@@ -14,5 +14,6 @@
     "isolatedModules": true
   },
   "include": ["src/assets.d.ts", "src/frontend/**/*", "src/App.jsx", "src/main.jsx"],
-  "exclude": ["node_modules", "dist", "src/backend"]
+  "exclude": ["node_modules", "dist", "src/backend"],
+  "references": [{ "path": "./scripts" }]
 }
